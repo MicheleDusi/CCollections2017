@@ -1,4 +1,5 @@
-#include <stdbool.h>
+#include "UnidirectionalList.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -12,36 +13,10 @@
  * 
  */
 
-const int EMPTY_SIZE = 0;
-const char STRING_TITLE[] = "LISTA [length: %-10d]\n";
-const int STRING_TITLE_LENGTH = 26;
-
-typedef struct list_node {
-	void* data;
-	struct list_node* next;
-} list_node;
-
-typedef struct {
+struct list {
 	int size;
 	list_node* head;
-} list;
-
-////////////////////////////////////////////////////////////////////////////
-// Quello che finirà nell'header:
-// DA SISTEMARE
-
-list* initList();
-void insertElementFirst(list* l, void* new_element_data);
-void insertElementLast(list* l, void* new_element_data);
-void* getHeadContent(list* l);
-list_node* getHead(list* l);
-void* getTailContent(list* l);
-static list_node* getTail(list* l);
-static list_node* getElementAtPosition(list* l, int pos);
-static list_node* extractElementAtPosition(list* l, int pos);
-
-///////////////////////////////////////////////////////////////////////////
-
+};
 
 /** 
  * Inizializzazione della lista vuota. 
