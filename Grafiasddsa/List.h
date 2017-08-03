@@ -47,6 +47,7 @@ void* extractElementAtPosition(list* l, int pos);
 void* getTailContent(list* l);
 void* getElementContentAtPosition(list* l, int pos);
 int getListSize(list* l);
+int getElementPosition(list* l, void* element_content);
 bool containsElement(list* l, bool (*condition)(void*));
 void swapTwoElements(list* l, int pos1, int pos2);
 list* cloneOrderedList(list* l, void* (*clone)(void*));
@@ -54,6 +55,6 @@ list* concatenateTwoLists(list* l11, list* l22, void* (*clone)(void*));
 void* getMinimumContent(list* l, int (*compare)(void*, void*));
 void* getMaximumContent(list* l, int (*compare)(void*, void*));
 void sortByOrder(list* l, int (*compare)(void*, void*));
-void listToString(list* l, char* destination_str, char* (*toStringFunction)(void*));
+char* listToString(list* l, char* (*toStringFunction)(void*));
 
 #endif

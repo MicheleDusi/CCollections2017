@@ -276,6 +276,19 @@ int getListSize(list* l) {
 	}
 }
 
+int getElementPosition(list* l, void* element_content) {
+	switch (l->type) {
+		case ul:
+			return ul_getElementPosition(l->genericlist.ul, element_content);
+		case bl:
+//			return bl_getElementPosition(l->genericlist.bl, element_content);
+		case al:
+			return al_getElementPosition(l->genericlist.al, element_content);
+		default:
+			TYPE_ERROR;
+	}
+}
+
 bool containsElement(list* l, bool (*condition)(void*)) {
 	switch (l->type) {
 		case ul:
@@ -401,20 +414,19 @@ void sortByOrder(list* l, int (*compare)(void*, void*)) {
 	}
 }
 
-void listToString(list* l, char* destination_str, char* (*toStringFunction)(void*)) {
-	char* str = NULL;
+char* listToString(list* l, char* (*toStringFunction)(void*)) {
 	switch (l->type) {
 		case ul:
-			str = ul_listToString(l->genericlist.ul, toStringFunction);
+			return ul_listToString(l->genericlist.ul, toStringFunction);
 			break;
 		case bl:
-//			str = bl_listToString(l->genericlist.bl, toStringFunction);
+//			return bl_listToString(l->genericlist.bl, toStringFunction);
 			break;
 		case al:
-			str = al_listToString(l->genericlist.al, toStringFunction);
+			return al_listToString(l->genericlist.al, toStringFunction);
 			break;
 		default:
 			TYPE_ERROR;
 	}
-	return str;
+	return NULL;
 }
