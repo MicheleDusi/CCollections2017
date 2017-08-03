@@ -191,7 +191,7 @@ void* ul_extractHeadContent(ulinked_list* l) {
 /**
  * Estrae un elemento alla posizione desiderata, lo cancella dalla lista e lo restituisce come puntatore.
  */
-static ulinked_list_node* ul_extractElementAtPosition(ulinked_list* l, int pos) {
+static ulinked_list_node* ul_extractNodeAtPosition(ulinked_list* l, int pos) {
 	if (pos < 0 || pos >= l->size) { // Così sto gestendo anche il caso "lista vuota"
 		// TODO Errore
 		return NULL;
@@ -210,6 +210,10 @@ static ulinked_list_node* ul_extractElementAtPosition(ulinked_list* l, int pos) 
 		l->size--;
 		return aux;
 	}
+}
+
+void* ul_extractElementAtPosition(ulinked_list* l, int pos) {
+	return ul_extractNodeAtPosition(l, pos)->data;
 }
 
 /**
@@ -258,6 +262,21 @@ int ul_getListSize(ulinked_list* l) {
 }
 
 /**
+ * Restituisce la posizione dell'elemento corrispondente a quello cercato.
+ * Se l'elemento non è presente all'interno della lista, viene restituito il valore -1.
+ */
+int ul_getElementPosition(ulinked_list* l, void* element_content) {
+	ulinked_list_node* iterator = l->head;
+	for (int i = 0; i < l->size; i++) {
+		if (iterator->data == element_content) {
+			return i;
+		}
+		iterator = iterator->next;
+	}
+	return -1;
+}
+
+/**
  * Verifica che all'interno della lista sia presente almeno un elemento che soddisfi una data condizione.
  */
 bool ul_containsElement(ulinked_list* l, bool (*condition)(void*)) {
@@ -281,7 +300,7 @@ void ul_swapTwoElements(ulinked_list* l, int pos1, int pos2) {
 			SWAP(pos1, pos2);		// Mi assicuro che pos1 < pos2
 		// Scambio i due elementi
 		ulinked_list_node* aux = ul_extractElementAtPosition(l, pos1);
-		ul_insertElementAtPosition(l, ul_extractElementAtPosition(l, pos2 - 1)->data, pos1);
+		ul_insertElementAtPosition(l, ul_extractElementAtPosition(l, pos2 - 1), pos1);
 		ul_insertElementAtPosition(l, aux->data, pos2);
 	}
 }
@@ -434,10 +453,11 @@ void ul_sortByOrder(ulinked_list* l, int (*compare)(void*, void*)) {
  * Per rappresentare ogni singolo nodo viene passata come parametro la funzione che converte in stringa il contenuto
  * di un elemento. E' necessario fornire anche la dimensione massima della stringa di un singolo elemento.
  */
-char* ul_listToString(ulinked_list* l, char* (*toString)(void*), int max_data_length) {
+char* ul_listToString(ulinked_list* l, char* (*toString)(void*)) {
 	// MOLTO PROBABILMENTE (aka: quasi sicuramente) CONTIENE ERRORI.
 	char* s;
 	// STRING_TITLE_LENGTH + max_data_length * l->size
+	int max_data_length = 20; // TODO Allocazione dinamica della memoria
 	s = malloc(sizeof(STRING_TITLE_LENGTH + max_data_length * l->size));
 	sprintf(s, STRING_TITLE, l->size);
 	ulinked_list_node* iterator = l->head;

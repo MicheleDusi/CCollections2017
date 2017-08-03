@@ -31,10 +31,11 @@ void ul_deleteElementAtPosition(ulinked_list* l, int pos);
 void ul_deleteElementsByConditions(ulinked_list* l, bool (*condition)(void*));
 void* ul_getHeadContent(ulinked_list* l);
 void* ul_extractHeadContent(ulinked_list* l);
-void* ul_extractElementAtPosition(ulinked_list* l, int pos); // TODO
+void* ul_extractElementAtPosition(ulinked_list* l, int pos);
 void* ul_getTailContent(ulinked_list* l);
 void* ul_getElementContentAtPosition(ulinked_list* l, int pos);
 int ul_getListSize(ulinked_list* l);
+int ul_getElementPosition(ulinked_list* l, void* element_content);
 bool ul_containsElement(ulinked_list* l, bool (*condition)(void*));
 void ul_swapTwoElements(ulinked_list* l, int pos1, int pos2);
 ulinked_list* ul_cloneOrderedList(ulinked_list* l, void* (*clone)(void*));
@@ -43,6 +44,6 @@ ulinked_list* ul_concatenateTwoLists(ulinked_list* l1, ulinked_list* l2, void* (
 void* ul_getMinimumContent(ulinked_list* l, int (*compare)(void*, void*));
 void* ul_getMaximumContent(ulinked_list* l, int (*compare)(void*, void*));
 void ul_sortByOrder(ulinked_list* l, int (*compare)(void*, void*));
-char* ul_listToString(ulinked_list* l, char* (*toString)(void*), int max_data_length);
+char* ul_listToString(ulinked_list* l, char* (*toString)(void*));
 
 #endif
