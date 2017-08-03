@@ -26,6 +26,7 @@ void* al_extractElementAtPosition(arraylist* l, int pos);
 void* al_getTailContent(arraylist* l);
 void* al_getElementContentAtPosition(arraylist* l, int pos);
 int al_getListSize(arraylist* l);
+int al_getElementPosition(arraylist* l, void* element_content);
 bool al_containsElement(arraylist* l, bool (*condition)(void*));
 void al_swapTwoElements(arraylist* l, int pos1, int pos2);
 arraylist* al_cloneOrderedList(arraylist* l, void* (*clone)(void*));

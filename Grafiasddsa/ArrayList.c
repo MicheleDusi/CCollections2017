@@ -234,6 +234,19 @@ int al_getListSize(arraylist* l) {
 }
 
 /**
+ * Restituisce la posizione dell'elemento corrispondente a quello cercato.
+ * Se l'elemento non è presente all'interno della lista, viene restituito il valore -1.
+ */
+int ul_getElementPosition(arraylist* l, void* element_content) {
+	for (int i = 0; i < l->size; i++) {
+		if (element_content == l->array[i]) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+/**
  * Verifica che all'interno della lista sia presente almeno un elemento che soddisfi una data condizione.
  */
 bool al_containsElement(arraylist* l, bool (*condition)(void*)) {
