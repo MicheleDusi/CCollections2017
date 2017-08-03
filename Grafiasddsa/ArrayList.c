@@ -3,44 +3,61 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "ArrayList.h"
+
 #define INCREASING_FACTOR 2
 #define INCREASING_CHECK 0.75
 #define DECREASING_FACTOR 0.5
 #define DECREASING_CHECK 0.25
-#define DEFAULT_CAPACITY 10
-#define MINIMUM_CAPACITY DEFAULT_CAPACITY * DECREASING_FACTOR
+#define DEFAulT_CAPACITY 10
+#define MINIMUM_CAPACITY DEFAulT_CAPACITY * DECREASING_FACTOR
 
 
-const char STRING_TITLE[] = "LISTA [length: %-10d]\n";
+const char* STRING_TITLE = "LISTA [size: %d]\n";
 const int STRING_TITLE_LENGTH = 26;
-
-typedef struct arraylist {
-	int size;
-	int capacity;
-	void** array;
-} arraylist;
-
 
 /**
  * Inizializzazione di una lista vuota con capacità iniziale personalizzata.
  */
-arraylist* initArrayListWithCapacity(int cap) {
+arraylist* al_initListWithCapacity(int cap) {
 	arraylist* new_list = malloc(sizeof(arraylist));
 	if (!new_list) {
-		// TODO Error
+		printf("Errore: memoria insufficiente per la creazione della lista!\n");
+		exit(1);
 	}
 	new_list->size = 0;
 	new_list->capacity = cap > MINIMUM_CAPACITY ? cap : MINIMUM_CAPACITY;
-	void* new_array[new_list->capacity];
-	new_list->array = new_array;
+	new_list->array = malloc(new_list->capacity * sizeof(void*));
 	return new_list;
 }
 
 /** 
  * Inizializzazione della lista vuota con capacità iniziale di default.
  */
-arraylist* initArrayList() {
-	return initArrayListWithCapacity(DEFAULT_CAPACITY);
+arraylist* al_initList() {
+	return al_initListWithCapacity(DEFAulT_CAPACITY);
+}
+
+/**
+ * Elimina la lista passata come parametro, liberando le zone di memoria occupate
+ * dalla struttura ArrayList e dal vettore interno.
+ * <b>NON</b> elimina gli oggetti a cui i puntatori nel vettore puntano.
+ */
+void al_cleanList(arraylist* l) {
+	free(l->array);
+	free(l);
+}
+
+/**
+ * Elimina la lista passata come parametro, liberando le zone di memoria occupate
+ * dalla struttura ArrayList, dal vettore interno e dagli oggetti contenuti all'interno del vettore.
+ * Questo significa che essi non saranno più utilizzabili dopo la chiamta a funzione.
+ */
+void al_purgeList(arraylist* l) {
+	for (int i = 0; i < l->size; i++) {
+		free(l->array[i]);
+	}
+	al_cleanList(l);
 }
 
 /**
@@ -71,14 +88,14 @@ static void checkAndDecreaseCapacity(arraylist* l) {
 /**
  * Controlla che la posizione inserita sia ammessa nella lista.
  */
-static bool checkPositionValidity(arraylist* l, int pos) {
+static bool al_checkPositionValidity(arraylist* l, int pos) {
 	return pos >= 0 && pos < l->size;
 }
 
 /** 
  * Inserimento di un elemento in testa alla lista.
  */
-void insertElementFirst(arraylist* l, void* new_element_data) {
+void al_insertElementFirst(arraylist* l, void* new_element_data) {
 	for (int i = l->size; i > 0; i--) {
 		l->array[i] = l->array[i - 1];
 	}
@@ -90,14 +107,14 @@ void insertElementFirst(arraylist* l, void* new_element_data) {
 /**
  * Inserimento di un elemento in coda alla lista.
  */
-void insertElementLast(arraylist* l, void* new_element_data) {
+void al_insertElementLast(arraylist* l, void* new_element_data) {
 	l->array[l->size] = new_element_data;
 	l->size++;
 	checkAndIncreaseCapacity(l);
 }
 
-void insertElementAtPosition(arraylist* l, void* new_element_data, int pos) {
-	if (checkPositionValidity(l, pos)) {
+void al_insertElementAtPosition(arraylist* l, void* new_element_data, int pos) {
+	if (al_checkPositionValidity(l, pos)) {
 		for (int i = l->size; i > pos; i--) {
 			l->array[i] = l->array[i - 1];
 		}
@@ -109,7 +126,7 @@ void insertElementAtPosition(arraylist* l, void* new_element_data, int pos) {
 	}
 }
 
-void deleteFirstElement(arraylist* l) {
+void al_deleteFirstElement(arraylist* l) {
 	for (int i = 0; i < l->size - 1; i++) {
 		l->array[i] = l->array[i + 1];
 	}
@@ -117,7 +134,7 @@ void deleteFirstElement(arraylist* l) {
 	checkAndDecreaseCapacity(l);
 }
 
-void deleteLastElement(arraylist* l) {
+void al_deleteLastElement(arraylist* l) {
 	l->size--;
 	checkAndDecreaseCapacity(l);
 }
@@ -125,8 +142,8 @@ void deleteLastElement(arraylist* l) {
 /**
  * Rimuove un elemento alla posizione desiderata.
  */
-void deleteElementAtPosition(arraylist* l, int pos) {
-	if (checkPositionValidity(l, pos)) {
+void al_deleteElementAtPosition(arraylist* l, int pos) {
+	if (al_checkPositionValidity(l, pos)) {
 		for (int i = pos; i < l->size - 1; i++) {
 			l->array[i] = l->array[i + 1];
 		}
@@ -138,14 +155,16 @@ void deleteElementAtPosition(arraylist* l, int pos) {
 /**
  * Rimuove tutti gli elementi che soddisfano una data condizione.
  */
-void deleteElementsByConditions(arraylist* l, bool (*condition)(void*)) {
-	int deleted_shift = 0; // Rappresenta sia il numero di elementi eliminati, sia il numero di spostamenti necessari per "ricompattare" l'array.
-	for (int i = 0; i < l->size; i++) {
+void al_deleteElementsByConditions(arraylist* l, bool (*condition)(void*)) {
+	for (int i = 0; i < l->size;) {
 		if (condition(l->array[i])) {
-			deleted_shift++;
 			l->size--;
+			for (int j = i; j < l->size; j++) {
+				l->array[j] = l->array[j + 1];
+			}
+		} else {
+			i++;
 		}
-		l->array[i] = l->array[i + deleted_shift];
 	}
 	checkAndDecreaseCapacity(l);
 }
@@ -153,14 +172,14 @@ void deleteElementsByConditions(arraylist* l, bool (*condition)(void*)) {
 /**
  * Restituisce il contenuto del primo elemento della lista.
  */
-void* getHeadContent(arraylist* l) {
+void* al_getHeadContent(arraylist* l) {
 	return l->array[0];
 }
 
 /**
  * Restituisce il contenuto del primo elemento.
  */
-void* extractHeadContent(arraylist* l) {
+void* al_extractHeadContent(arraylist* l) {
 	void* aux = l->array[0];
 	l->size--;
 	for (int i = 0; i < l->size; i++) {
@@ -174,8 +193,8 @@ void* extractHeadContent(arraylist* l) {
  * Estrae un elemento alla posizione desiderata, lo cancella dalla lista e lo restituisce come puntatore.
  * Il primo elemento della lista ha posizione "0".
  */
-void* extractElementAtPosition(arraylist* l, int pos) {
-	if (checkPositionValidity(l, pos)) {
+void* al_extractElementAtPosition(arraylist* l, int pos) {
+	if (al_checkPositionValidity(l, pos)) {
 		void* aux = l->array[pos];
 		l->size--;
 		for (int i = pos; i < l->size; i++) {
@@ -192,7 +211,7 @@ void* extractElementAtPosition(arraylist* l, int pos) {
  * Restituisce il contenuto dell'ultimo elemento della lista.
  * Se la lista è vuota, restituisce NULL.
  */
-void* getTailContent(arraylist* l) {
+void* al_getTailContent(arraylist* l) {
 	if (l->size > 0)
 		return l->array[l->size - 1];
 	return NULL;
@@ -201,8 +220,8 @@ void* getTailContent(arraylist* l) {
 /**
  * Restituisce il contentuto di un elemento alla posizione desiderata.
  */
-void* getElementContentAtPosition(arraylist* l, int pos) {
-	if (checkPositionValidity(l, pos))
+void* al_getElementContentAtPosition(arraylist* l, int pos) {
+	if (al_checkPositionValidity(l, pos))
 		return l->array[pos];
 	return NULL;
 }
@@ -210,14 +229,14 @@ void* getElementContentAtPosition(arraylist* l, int pos) {
 /**
  * Restituisce la quantità di elementi presenti nella lista.
  */
-int getListSize(arraylist* l) {
+int al_getListSize(arraylist* l) {
 	return l->size;
 }
 
 /**
  * Verifica che all'interno della lista sia presente almeno un elemento che soddisfi una data condizione.
  */
-bool containsElement(arraylist* l, bool (*condition)(void*)) {
+bool al_containsElement(arraylist* l, bool (*condition)(void*)) {
 	for (int i = 0; i < l->size; i++) {
 		if (condition(l->array[i])) {
 			return true;
@@ -229,11 +248,13 @@ bool containsElement(arraylist* l, bool (*condition)(void*)) {
 /**
  * Scambia di posto due elementi della lista, date le loro posizioni.
  */
-void swapTwoElements(arraylist* l, int pos1, int pos2) {
-	if (checkPositionValidity(l, pos1) && checkPositionValidity(l, pos2)) {
-		void* aux = l->array[pos1];
+void al_swapTwoElements(arraylist* l, int pos1, int pos2) {
+	if (al_checkPositionValidity(l, pos1) && al_checkPositionValidity(l, pos2)) {
+		void* aux = malloc(sizeof(void*));
+		aux = l->array[pos1];
 		l->array[pos1] = l->array[pos2];
 		l->array[pos2] = aux;
+		free(aux);
 	} else {
 		// TODO Errore
 	}
@@ -243,9 +264,9 @@ void swapTwoElements(arraylist* l, int pos1, int pos2) {
  * Clona una lista, data in ingresso una funzione per la clonazione del contenuto di un elemento.
  * Garantisce il mantenimento dell'ordine durante il processo.
  */
-arraylist* cloneOrderedList(arraylist* l, void* (*clone)(void*)) {
+arraylist* al_cloneOrderedList(arraylist* l, void* (*clone)(void*)) {
 	// Inizializzo la nuova lista
-	arraylist* new_list = initArrayListWithCapacity(l->capacity);
+	arraylist* new_list = al_initListWithCapacity(l->capacity);
 	// Clonazione
 	for (int i = 0; i < l->size; i++) {
 		new_list->array[i] = clone(l->array[i]);
@@ -260,9 +281,9 @@ arraylist* cloneOrderedList(arraylist* l, void* (*clone)(void*)) {
  * Le liste originali <b>NON</b> vengono modificate.
  * E' possibile personalizzare il processo di clonazione attraverso la funzione <i>clone</i> passata come parametro.
  */
-arraylist* concatenateTwoLists(arraylist* l1, arraylist* l2, void* (*clone)(void*)) {
+arraylist* al_concatenateTwoLists(arraylist* l1, arraylist* l2, void* (*clone)(void*)) {
 	// Inizializzo la lista vuota pronta ad accogliere gli elementi clonati
-	arraylist* new_list = initArrayListWithCapacity(l1->capacity + l2->capacity);
+	arraylist* new_list = al_initListWithCapacity(l1->capacity + l2->capacity);
 	new_list->size = l1->size + l2->size;
 	// Clono gli elementi
 	int i;
@@ -285,7 +306,7 @@ arraylist* concatenateTwoLists(arraylist* l1, arraylist* l2, void* (*clone)(void
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
-void* getMinimumContent(arraylist* l, int (*compare)(void*, void*)) {
+void* al_getMinimumContent(arraylist* l, int (*compare)(void*, void*)) {
 	if (l->size > 0) {
 		void* minimum = l->array[0];
 		for (int i = 1; i < l->size; i++) {
@@ -308,7 +329,7 @@ void* getMinimumContent(arraylist* l, int (*compare)(void*, void*)) {
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
-void* getMaximumContent(arraylist* l, int (*compare)(void*, void*)) {
+void* al_getMaximumContent(arraylist* l, int (*compare)(void*, void*)) {
 	if (l->size > 0) {
 		void* maximum = l->array[0];
 		for (int i = 1; i < l->size; i++) {
@@ -330,22 +351,139 @@ void* getMaximumContent(arraylist* l, int (*compare)(void*, void*)) {
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
-void sortByOrder(arraylist* l, int (*compare)(void*, void*)) {
-	// TODODODODODODODODODODODODODODODODOD
+void al_sortByOrder(arraylist* l, int (*compare)(void*, void*)) {
+	// Implemento un lento e noioso BubbleSort
+	for (int i = 0; i < l->size; i++) {
+		for (int j = l->size - 1; j > i; j--) {
+			if (compare(l->array[j], l->array[j - 1]) < 0) {
+				void* aux = l->array[j];
+				l->array[j] = l->array[j - 1];
+				l->array[j -1] = aux;
+			}
+		}
+	}
 }
 
 /**
  * Restituisce una stringa che rappresenta gli elementi contenuti all'interno della lista.
  * Per rappresentare ogni singolo elemento viene passata come parametro la funzione che converte in stringa il contenuto
- * di un elemento. E' necessario fornire anche la dimensione massima della stringa di un singolo elemento.
+ * di un elemento.
  */
-char* listToString(arraylist* l, char* (*toString)(void*), int max_data_length) {
-	char* s;
-	// STRING_TITLE_LENGTH + max_data_length * l->size
-	s = malloc(sizeof(STRING_TITLE_LENGTH + max_data_length * l->size));
-	sprintf(s, STRING_TITLE, l->size);
-	for (int i = 0; i < l->size; i++) {
-		strcat(s, toString(l->array[i]));
+char* al_listToString(arraylist* l, char* (*toStringFunction)(void*)) {
+	// Alloco lo spazio necessario nella stringa di destinazione
+	char* final_str = malloc((STRING_TITLE_LENGTH + 1) * sizeof(char));
+	if (!final_str) {
+		printf("OutOfMemoryError\n");
+		exit(1);
 	}
-	return s;
+	sprintf(final_str, STRING_TITLE, l->size);
+	char* aux_string = " ";
+	for (int i = 0; i < l->size; i++) {
+		aux_string = toStringFunction(l->array[i]);
+		int new_length = strlen(final_str) + strlen(aux_string) + 2;
+		final_str = realloc(final_str, new_length * sizeof(char));
+		strcat(final_str, aux_string);
+	}
+	strcat(final_str, "\n");
+	return final_str;
 }
+
+//////////////////////////////////////////////////////
+// TESTING //
+
+
+typedef struct {
+	char first_letters[2];
+	int three_numbers;
+	char last_letters[2];
+} string;
+
+
+char getRandomChar() {
+	return (char)((rand() % ('Z' - 'A')) + 'A');
+}
+
+string* initString() {
+	string* new = malloc(sizeof(string));
+	if (!new) {
+		printf("ERRORE NULL");
+	}
+	new->first_letters[0] = getRandomChar();
+	new->first_letters[1] = getRandomChar();
+	new->three_numbers = rand() % 1000;
+	new->last_letters[0] = getRandomChar();
+	new->last_letters[1] = getRandomChar();
+	return new;
+}
+
+
+char* stringifyMyStruct(void* my_object) {
+	char* created_string = malloc(sizeof(char) * 13);
+	sprintf(created_string, "[%c%c %03d %c%c] ", 
+		((string*)my_object)->first_letters[0],
+		((string*)my_object)->first_letters[1],
+		((string*)my_object)->three_numbers,
+		((string*)my_object)->last_letters[0],
+		((string*)my_object)->last_letters[1]);
+	return created_string;
+}
+
+int compareMyStruct(void* obj1, void* obj2) {
+	return strcmp(
+		stringifyMyStruct(((string*)obj1)), 
+		stringifyMyStruct(((string*)obj2)));
+}
+
+bool hasEvenNumber(void* targa) {
+	if (((string*)targa)->three_numbers % 2 == 0) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+#include <time.h>
+
+int main(void) {
+	arraylist* arr = al_initList();
+	char* string_of_list;
+	
+	srand(time(NULL));
+	
+	int dim = 10;
+	
+	for (int i = 0; i < dim; i++) {
+		al_insertElementLast(arr, initString());
+	}
+	
+	// Stampo la lista
+	string_of_list = al_listToString(arr, stringifyMyStruct);
+	printf("%s\n", string_of_list);
+	free(string_of_list);
+	
+	// Ordino la lista
+	al_sortByOrder(arr, compareMyStruct);
+	printf("Ho ordinato la lista\n\n");
+	
+	// Stampo la lista
+	string_of_list = al_listToString(arr, stringifyMyStruct);
+	printf("%s\n", string_of_list);
+	free(string_of_list);
+	
+	// Elimino le targhe pari
+	al_deleteElementsByConditions(arr, hasEvenNumber);
+	printf("Elimino le targhe pari.\n\n");
+	
+	// Stampo la lista
+	string_of_list = al_listToString(arr, stringifyMyStruct);
+	printf("%s\n", string_of_list);
+	free(string_of_list);
+	
+	// FREE
+	al_purgeList(arr);
+		
+	return 0;
+}
+//////////////////////*/
+
+

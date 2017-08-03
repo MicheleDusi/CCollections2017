@@ -13,15 +13,10 @@
  * 
  */
 
-struct ulinked_list {
-	int size;
-	ulinked_list_node* head;
-};
-
 /** 
  * Inizializzazione della lista vuota. 
  */
-ulinked_list* initULinkedList() {
+ulinked_list* ul_initList() {
 	ulinked_list* new_list = malloc(sizeof(ulinked_list));
 	if (new_list == NULL) {
 		// TODO Errore OutOfMemory
@@ -32,10 +27,24 @@ ulinked_list* initULinkedList() {
 	return new_list;
 }
 
+/**
+ * Restituisce l'ultimo elemento della lista.
+ */
+static ulinked_list_node* ul_getTail(ulinked_list* l) {
+	if (l->size == 0)
+		return NULL; // Caso in cui la lista sia vuota
+		
+	ulinked_list_node* iterator = l->head;
+	for (int i = 1; i < l->size; i++) {
+		iterator = iterator->next;
+	}
+	return iterator;
+}
+
 /** 
  * Inserimento di un elemento in testa alla lista.
  */
-void insertElementFirst(ulinked_list* l, void* new_element_data) {
+void ul_insertElementFirst(ulinked_list* l, void* new_element_data) {
 	ulinked_list_node* new_element = malloc(sizeof(ulinked_list_node));
 	if (new_element == NULL) {
 		// TODO errore
@@ -49,7 +58,7 @@ void insertElementFirst(ulinked_list* l, void* new_element_data) {
 /**
  * Inserimento di un elemento in coda alla lista.
  */
-void insertElementLast(ulinked_list* l, void* new_element_data) {
+void ul_insertElementLast(ulinked_list* l, void* new_element_data) {
 	ulinked_list_node* new_element = malloc(sizeof(ulinked_list_node));
 	if (new_element == NULL) {
 		// TODO errore
@@ -60,7 +69,7 @@ void insertElementLast(ulinked_list* l, void* new_element_data) {
 	if (l->size == EMPTY_SIZE)
 		l->head = new_element;
 	else
-		getTail(l)->next = new_element;
+		ul_getTail(l)->next = new_element;
 	l->size++;
 }
 
@@ -70,11 +79,11 @@ void insertElementLast(ulinked_list* l, void* new_element_data) {
  * Se viene inserita una posizione superiore al numero di elementi, l'elemento viene inserito in coda.
  * Se viene inserita una posizione negativa, la funzione non viene eseguita.
  */
-void insertElementAtPosition(ulinked_list* l, void* new_element_data, int pos) {
+void ul_insertElementAtPosition(ulinked_list* l, void* new_element_data, int pos) {
 	if (pos < 0) {
 		// TODO ERRORE
 	} else if (pos == 0) {
-		insertElementFirst(l, new_element_data);
+		ul_insertElementFirst(l, new_element_data);
 	} else {
 		ulinked_list_node* new_element = malloc(sizeof(ulinked_list_node));
 		if (new_element == NULL) {
@@ -96,10 +105,10 @@ void insertElementAtPosition(ulinked_list* l, void* new_element_data, int pos) {
  * Gli elementi da aggiungere vengono passati come "ulinked_list*".
  * L'utilizzo di questa funzione provoca la cancellazione della seconda lista, pertanto è
  * sconsigliata se si vuole unire due liste differenti. In sostituzione, è possibile utilizzare
- * la funzione "concatenateTwoLists" che ricopia le liste in questione senza modificare gli originali.
+ * la funzione "ul_concatenateTwoLists" che ricopia le liste in questione senza modificare gli originali.
  */
-void insertAllElementsLast(ulinked_list* l, ulinked_list* elements) {
-	getTail(l)->next = elements->head;
+void ul_insertAllElementsLast(ulinked_list* l, ulinked_list* elements) {
+	ul_getTail(l)->next = elements->head;
 	l->size += elements->size;
 	free(elements);
 }
@@ -107,7 +116,7 @@ void insertAllElementsLast(ulinked_list* l, ulinked_list* elements) {
 /**
  * Cancella il primo elemento della lista.
  */
-void deleteFirstElement(ulinked_list* l) {
+void ul_deleteFirstElement(ulinked_list* l) {
 	if (l->size != EMPTY_SIZE) {
 		ulinked_list_node* aux = l->head;
 		l->head = l->head->next;
@@ -119,7 +128,7 @@ void deleteFirstElement(ulinked_list* l) {
 /**
  * Cancella l'ultimo elemento della lista.
  */
-void deleteLastElement(ulinked_list* l) {
+void ul_deleteLastElement(ulinked_list* l) {
 	if (l->size == EMPTY_SIZE) {
 		// TODO BOH
 		// Non succede nulla?
@@ -138,36 +147,11 @@ void deleteLastElement(ulinked_list* l) {
 	}
 }
 
-/**
- * Rimuove un elemento alla posizione desiderata.
- */
-void deleteElementAtPosition(ulinked_list* l, int pos) {
-	free(extractElementAtPosition(l, pos));
-/*
-	if (pos < 0 || pos >= l->size) { // Così sto gestendo anche il caso "lista vuota"
-		// TODO Errore
-	} else if (pos == 1) {
-		ulinked_list_node* aux = l->head;
-		l->head = l->head->next;
-		free(aux);
-		l->size--;
-	} else {
-		ulinked_list_node* iterator = l->head;
-		for (int i = 0; i < pos - 1 && i < l->size - 1; i++) {
-			iterator = iterator->next;
-		}
-		ulinked_list_node* aux = iterator->next;
-		iterator->next = iterator->next->next;
-		free(aux);
-		l->size--;
-	}
-*/
-}
 
 /**
  * Rimuove tutti gli elementi che soddisfano una data condizione.
  */
-void deleteElementsByConditions(ulinked_list* l, bool (*condition)(void*)) {
+void ul_deleteElementsByConditions(ulinked_list* l, bool (*condition)(void*)) {
 	ulinked_list_node* iterator = l->head;
 	ulinked_list_node* aux = NULL;
 	while(iterator->next != NULL) {
@@ -181,21 +165,21 @@ void deleteElementsByConditions(ulinked_list* l, bool (*condition)(void*)) {
 		iterator = iterator->next;
 	}
 	if (condition(l->head)) {
-		deleteFirstElement(l);
+		ul_deleteFirstElement(l);
 	}
 }
 
 /**
  * Restituisce il contenuto del primo elemento della lista.
  */
-void* getHeadContent(ulinked_list* l) {
+void* ul_getHeadContent(ulinked_list* l) {
 	return l->head->data;
 }
 
 /**
  * Restituisce il contenuto del primo elemento.
  */
-void* extractHeadContent(ulinked_list* l) {
+void* ul_extractHeadContent(ulinked_list* l) {
 	if (l->size) {
 		ulinked_list_node* aux = l->head;
 		l->head = l->head->next;
@@ -207,7 +191,7 @@ void* extractHeadContent(ulinked_list* l) {
 /**
  * Estrae un elemento alla posizione desiderata, lo cancella dalla lista e lo restituisce come puntatore.
  */
-static ulinked_list_node* extractElementAtPosition(ulinked_list* l, int pos) {
+static ulinked_list_node* ul_extractElementAtPosition(ulinked_list* l, int pos) {
 	if (pos < 0 || pos >= l->size) { // Così sto gestendo anche il caso "lista vuota"
 		// TODO Errore
 		return NULL;
@@ -229,40 +213,26 @@ static ulinked_list_node* extractElementAtPosition(ulinked_list* l, int pos) {
 }
 
 /**
+ * Rimuove un elemento alla posizione desiderata.
+ */
+void ul_deleteElementAtPosition(ulinked_list* l, int pos) {
+	free(ul_extractElementAtPosition(l, pos));
+}
+
+/**
  * Restituisce il contenuto dell'ultimo elemento della lista.
  */
-void* getTailContent(ulinked_list* l) {
+void* ul_getTailContent(ulinked_list* l) {
 	if (l->size)
-		return getTail(l)->data;
+		return ul_getTail(l)->data;
 	return NULL;
 }
 
 /**
- * Restituisce l'ultimo elemento della lista.
- */
-static ulinked_list_node* getTail(ulinked_list* l) {
-	if (l->size == 0)
-		return NULL; // Caso in cui la lista sia vuota
-		
-	ulinked_list_node* iterator = l->head;
-	for (int i = 1; i < l->size; i++) {
-		iterator = iterator->next;
-	}
-	return iterator;
-}
-
-/**
- * Restituisce il contentuto di un elemento alla posizione desiderata.
- */
-void* getElementContentAtPosition(ulinked_list* l, int pos) {
-	return getElementAtPosition(l, pos)->data;
-}
-
-/**
  * Restituisce l'elemento ad una data posizione.
- * Se viene inserita una posizione superiore al numero di elementi presenti o un numero negativo, viene restituito NULL.
+ * Se viene inserita una posizione superiore al numero di elementi presenti o un numero negativo, viene restituito NulL.
  */
-static ulinked_list_node* getElementAtPosition(ulinked_list* l, int pos) {
+static ulinked_list_node* ul_getElementAtPosition(ulinked_list* l, int pos) {
 	if (pos < 0 || pos >= l->size)
 		return NULL;
 	
@@ -274,16 +244,23 @@ static ulinked_list_node* getElementAtPosition(ulinked_list* l, int pos) {
 }
 
 /**
+ * Restituisce il contentuto di un elemento alla posizione desiderata.
+ */
+void* ul_getElementContentAtPosition(ulinked_list* l, int pos) {
+	return ul_getElementAtPosition(l, pos)->data;
+}
+
+/**
  * Restituisce la quantità di elementi presenti nella lista.
  */
-int getListSize(ulinked_list* l) {
+int ul_getListSize(ulinked_list* l) {
 	return l->size;
 }
 
 /**
  * Verifica che all'interno della lista sia presente almeno un elemento che soddisfi una data condizione.
  */
-bool containsElement(ulinked_list* l, bool (*condition)(void*)) {
+bool ul_containsElement(ulinked_list* l, bool (*condition)(void*)) {
 	ulinked_list_node* iterator = l->head;
 	for (int i = 0; i < l->size; i++) {
 		if (condition(iterator->data))
@@ -296,16 +273,16 @@ bool containsElement(ulinked_list* l, bool (*condition)(void*)) {
 /**
  * Scambia di posto due elementi della lista, date le loro posizioni.
  */
-void swapTwoElements(ulinked_list* l, int pos1, int pos2) {
+void ul_swapTwoElements(ulinked_list* l, int pos1, int pos2) {
 	if (pos1 == pos2 || pos1 >= l->size || pos2 >= l->size) {
 		// DAFUQ
 	} else {
 		if (pos1 > pos2)
 			SWAP(pos1, pos2);		// Mi assicuro che pos1 < pos2
 		// Scambio i due elementi
-		ulinked_list_node* aux = extractElementAtPosition(l, pos1);
-		insertElementAtPosition(l, extractElementAtPosition(l, pos2 - 1)->data, pos1);
-		insertElementAtPosition(l, aux->data, pos2);
+		ulinked_list_node* aux = ul_extractElementAtPosition(l, pos1);
+		ul_insertElementAtPosition(l, ul_extractElementAtPosition(l, pos2 - 1)->data, pos1);
+		ul_insertElementAtPosition(l, aux->data, pos2);
 	}
 }
 
@@ -313,15 +290,15 @@ void swapTwoElements(ulinked_list* l, int pos1, int pos2) {
  * Clona una lista, data in ingresso una funzione per la clonazione del contenuto di un elemento.
  * Garantisce il mantenimento dell'ordine durante il processo.
  */
-ulinked_list* cloneOrderedList(ulinked_list* l, void* (*clone)(void*)) {
+ulinked_list* ul_cloneOrderedList(ulinked_list* l, void* (*clone)(void*)) {
 	// Inizializzo la nuova lista
-	ulinked_list* new_list = initULinkedList();
+	ulinked_list* new_list = ul_initList();
 	// Inizio la clonazione
 	ulinked_list_node* aux;
 	// Clono la testa
 	if (l->size) {
 		aux = malloc(sizeof(ulinked_list_node));
-		aux->data = clone(getHeadContent(l));
+		aux->data = clone(ul_getHeadContent(l));
 		aux->next = NULL;
 		new_list->head = aux;
 	}
@@ -348,7 +325,7 @@ ulinked_list* cloneOrderedList(ulinked_list* l, void* (*clone)(void*)) {
  * 
  * @deprecated Use cloneOrderedList instead.
  */
-ulinked_list* cloneUnorderedList(ulinked_list* l, void* (*clone)(void*)) {
+ulinked_list* ul_cloneUnorderedList(ulinked_list* l, void* (*clone)(void*)) {
 	// Inizializzo la nuova lista
 	ulinked_list* new_list = malloc(sizeof(ulinked_list));
 	new_list->size = 0;
@@ -356,7 +333,7 @@ ulinked_list* cloneUnorderedList(ulinked_list* l, void* (*clone)(void*)) {
 	// Clono gli elementi della lista originaria
 	ulinked_list_node* iterator = l->head;
 	for (int i = 0; i < l->size; i++) {
-		insertElementFirst(new_list, clone(iterator->data));
+		ul_insertElementFirst(new_list, clone(iterator->data));
 		iterator = iterator->next;
 	}
 	// Restituisco la lista creata
@@ -368,9 +345,9 @@ ulinked_list* cloneUnorderedList(ulinked_list* l, void* (*clone)(void*)) {
  * Le liste originali <b>NON</b> vengono modificate.
  * E' possibile personalizzare il processo di clonazione attraverso la funzione <i>clone</i> passata come parametro.
  */
-ulinked_list* concatenateTwoLists(ulinked_list* l1, ulinked_list* l2, void* (*clone)(void*)) {
-	ulinked_list* new_list = cloneOrderedList(l1, clone);
-	insertAllElementsLast(new_list, cloneOrderedList(l2, clone));
+ulinked_list* ul_concatenateTwoLists(ulinked_list* l1, ulinked_list* l2, void* (*clone)(void*)) {
+	ulinked_list* new_list = ul_cloneOrderedList(l1, clone);
+	ul_insertAllElementsLast(new_list, ul_cloneOrderedList(l2, clone));
 	return new_list;
 }
 
@@ -383,7 +360,7 @@ ulinked_list* concatenateTwoLists(ulinked_list* l1, ulinked_list* l2, void* (*cl
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
-static ulinked_list_node* getMinimumElement(ulinked_list* l, int (*compare)(void*, void*)) {
+static ulinked_list_node* ul_getMinimumElement(ulinked_list* l, int (*compare)(void*, void*)) {
 	ulinked_list_node* iterator = l->head->next;
 	ulinked_list_node* minimum = l->head;
 	for (int i = 1; i < l->size; i++) {
@@ -403,8 +380,8 @@ static ulinked_list_node* getMinimumElement(ulinked_list* l, int (*compare)(void
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
-void* getMinimumContent(ulinked_list* l, int (*compare)(void*, void*)) {
-	return getMinimumElement(l, compare)->data;
+void* ul_getMinimumContent(ulinked_list* l, int (*compare)(void*, void*)) {
+	return ul_getMinimumElement(l, compare)->data;
 }
 
 /**
@@ -416,7 +393,7 @@ void* getMinimumContent(ulinked_list* l, int (*compare)(void*, void*)) {
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
-static ulinked_list_node* getMaximumElement(ulinked_list* l, int (*compare)(void*, void*)) {
+static ulinked_list_node* ul_getMaximumElement(ulinked_list* l, int (*compare)(void*, void*)) {
 	ulinked_list_node* iterator = l->head->next;
 	ulinked_list_node* maximum = l->head;
 	for (int i = 1; i < l->size; i++) {
@@ -436,8 +413,8 @@ static ulinked_list_node* getMaximumElement(ulinked_list* l, int (*compare)(void
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
-void* getMaximumContent(ulinked_list* l, int (*compare)(void*, void*)) {
-	return getMaximumElement(l, compare)->data;
+void* ul_getMaximumContent(ulinked_list* l, int (*compare)(void*, void*)) {
+	return ul_getMaximumElement(l, compare)->data;
 }
 
 /**
@@ -448,7 +425,7 @@ void* getMaximumContent(ulinked_list* l, int (*compare)(void*, void*)) {
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
-void sortByOrder(ulinked_list* l, int (*compare)(void*, void*)) {
+void ul_sortByOrder(ulinked_list* l, int (*compare)(void*, void*)) {
 	// TODODODODODODODODODODODODODODODOD
 }
 
@@ -457,7 +434,8 @@ void sortByOrder(ulinked_list* l, int (*compare)(void*, void*)) {
  * Per rappresentare ogni singolo nodo viene passata come parametro la funzione che converte in stringa il contenuto
  * di un elemento. E' necessario fornire anche la dimensione massima della stringa di un singolo elemento.
  */
-char* listToString(ulinked_list* l, char* (*toString)(void*), int max_data_length) {
+char* ul_listToString(ulinked_list* l, char* (*toString)(void*), int max_data_length) {
+	// MOLTO PROBABILMENTE (aka: quasi sicuramente) CONTIENE ERRORI.
 	char* s;
 	// STRING_TITLE_LENGTH + max_data_length * l->size
 	s = malloc(sizeof(STRING_TITLE_LENGTH + max_data_length * l->size));
