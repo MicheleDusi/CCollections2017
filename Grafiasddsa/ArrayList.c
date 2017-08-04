@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
 
 #include "ArrayList.h"
 
@@ -9,12 +10,18 @@
 #define INCREASING_CHECK 0.75
 #define DECREASING_FACTOR 0.5
 #define DECREASING_CHECK 0.25
-#define DEFAulT_CAPACITY 10
-#define MINIMUM_CAPACITY DEFAulT_CAPACITY * DECREASING_FACTOR
+#define DEFAULT_CAPACITY 10
+#define MINIMUM_CAPACITY DEFAULT_CAPACITY * DECREASING_FACTOR
 
+#ifndef MEMORY_ERROR
+#	define MEMORY_ERROR printf("Error: Cannot allocate memory.\n"); exit(1)
+#endif
 
-const char* STRING_TITLE = "LISTA [size: %d]\n";
-const int STRING_TITLE_LENGTH = 26;
+#ifndef STRING_FORMATTING
+#	define STRING_FORMATTING
+	const char* STRING_TITLE = "LISTA [size: %d]\n";
+	const int STRING_TITLE_LENGTH = 26;
+#endif
 
 /**
  * Inizializzazione di una lista vuota con capacità iniziale personalizzata.
@@ -22,12 +29,14 @@ const int STRING_TITLE_LENGTH = 26;
 arraylist* al_initListWithCapacity(int cap) {
 	arraylist* new_list = malloc(sizeof(arraylist));
 	if (!new_list) {
-		printf("Errore: memoria insufficiente per la creazione della lista!\n");
-		exit(1);
+		MEMORY_ERROR;
 	}
 	new_list->size = 0;
 	new_list->capacity = cap > MINIMUM_CAPACITY ? cap : MINIMUM_CAPACITY;
 	new_list->array = malloc(new_list->capacity * sizeof(void*));
+	if (!(new_list->array)) {
+		MEMORY_ERROR;
+	}
 	return new_list;
 }
 
@@ -35,7 +44,7 @@ arraylist* al_initListWithCapacity(int cap) {
  * Inizializzazione della lista vuota con capacità iniziale di default.
  */
 arraylist* al_initList() {
-	return al_initListWithCapacity(DEFAulT_CAPACITY);
+	return al_initListWithCapacity(DEFAULT_CAPACITY);
 }
 
 /**
@@ -237,7 +246,7 @@ int al_getListSize(arraylist* l) {
  * Restituisce la posizione dell'elemento corrispondente a quello cercato.
  * Se l'elemento non è presente all'interno della lista, viene restituito il valore -1.
  */
-int ul_getElementPosition(arraylist* l, void* element_content) {
+int al_getElementPosition(arraylist* l, void* element_content) {
 	for (int i = 0; i < l->size; i++) {
 		if (element_content == l->array[i]) {
 			return i;
@@ -264,6 +273,9 @@ bool al_containsElement(arraylist* l, bool (*condition)(void*)) {
 void al_swapTwoElements(arraylist* l, int pos1, int pos2) {
 	if (al_checkPositionValidity(l, pos1) && al_checkPositionValidity(l, pos2)) {
 		void* aux = malloc(sizeof(void*));
+		if (!aux) {
+			MEMORY_ERROR;
+		}
 		aux = l->array[pos1];
 		l->array[pos1] = l->array[pos2];
 		l->array[pos2] = aux;
@@ -357,6 +369,40 @@ void* al_getMaximumContent(arraylist* l, int (*compare)(void*, void*)) {
 }
 
 /**
+ * Restituisce la sottolista che parte dall'elemento di indice start_pos all'elemento di end_pos.
+ * L'elemento end_pos è <emph>escluso</emph>, mentre viene incluso l'elemento start_pos.
+ * 
+ * <i>NOTA:</i> Non viene creata una nuova lista, gli elementi della lista originaria non vengono modificati.
+ * Pertanto un qualsiasi cambiamento alla lista originaria può provocare modifiche alla sottolista, e viceversa.
+ * 
+ * <i>NOTA:</i>Si consiglia di NON fare operazioni sugli elementi della sottolista: aggiunta o rimozione di elementi potrebbe comportare la corruzione
+ * dell'intera lista originaria. Questa funzione restituisce una lista comoda unicamente per operazioni di lettura.
+ */
+arraylist* al_getSubList(arraylist* l, int start_pos, int end_pos) {
+	if (al_checkPositionValidity(l, start_pos) && al_checkPositionValidity(l, end_pos)) {
+		arraylist* sublist = malloc(sizeof(arraylist));
+		if (!sublist) {
+			MEMORY_ERROR;
+		}
+		sublist->size = end_pos - start_pos;
+		sublist->capacity = l->capacity - start_pos;
+		sublist->array = &(l->array[start_pos]);
+		return sublist;
+	} else {
+		// Posizioni non valide
+		return NULL;
+	}
+}
+
+/**
+ * Restituisce una sottolista che parte dall'elemento di indice start_pos fino all'elemento di indice end_pos;
+ * La lista originale non viene modificata, e ogni singolo elemento viene clonato dalla funzione passata come parametro.
+ */
+arraylist* al_cloneSubList(arraylist* l, int start_pos, int end_pos, void* (*clone)(void*)) {
+	return al_cloneOrderedList(al_getSubList(l, start_pos, end_pos), clone);
+}
+
+/**
  * Ordina una lista in modo <i>crescente</i> secondo una relazione d'ordine definita dall'utente e passata come parametro.
  * La relazione deve essere implementata come una funzione che prende in ingresso il contenuto di due nodi, 
  * e li confronta restituendo:
@@ -386,8 +432,7 @@ char* al_listToString(arraylist* l, char* (*toStringFunction)(void*)) {
 	// Alloco lo spazio necessario nella stringa di destinazione
 	char* final_str = malloc((STRING_TITLE_LENGTH + 1) * sizeof(char));
 	if (!final_str) {
-		printf("OutOfMemoryError\n");
-		exit(1);
+		MEMORY_ERROR;
 	}
 	sprintf(final_str, STRING_TITLE, l->size);
 	char* aux_string = " ";
@@ -400,6 +445,12 @@ char* al_listToString(arraylist* l, char* (*toStringFunction)(void*)) {
 	strcat(final_str, "\n");
 	return final_str;
 }
+
+
+
+
+
+
 
 //////////////////////////////////////////////////////
 // TESTING //
@@ -419,7 +470,7 @@ char getRandomChar() {
 string* initString() {
 	string* new = malloc(sizeof(string));
 	if (!new) {
-		printf("ERRORE NULL");
+		MEMORY_ERROR;
 	}
 	new->first_letters[0] = getRandomChar();
 	new->first_letters[1] = getRandomChar();
@@ -432,6 +483,9 @@ string* initString() {
 
 char* stringifyMyStruct(void* my_object) {
 	char* created_string = malloc(sizeof(char) * 13);
+	if (!created_string) {
+		MEMORY_ERROR;
+	}
 	sprintf(created_string, "[%c%c %03d %c%c] ", 
 		((string*)my_object)->first_letters[0],
 		((string*)my_object)->first_letters[1],
@@ -454,8 +508,6 @@ bool hasEvenNumber(void* targa) {
 		return false;
 	}
 }
-
-#include <time.h>
 
 int main(void) {
 	arraylist* arr = al_initList();

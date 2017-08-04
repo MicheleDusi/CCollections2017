@@ -33,6 +33,8 @@ arraylist* al_cloneOrderedList(arraylist* l, void* (*clone)(void*));
 arraylist* al_concatenateTwoLists(arraylist* l1, arraylist* l2, void* (*clone)(void*));
 void* al_getMinimumContent(arraylist* l, int (*compare)(void*, void*));
 void* al_getMaximumContent(arraylist* l, int (*compare)(void*, void*));
+arraylist* al_getSubList(arraylist* l, int start_pos, int end_pos);
+arraylist* al_cloneSubList(arraylist* l, int start_pos, int end_pos, void* (*clone)(void*));
 void al_sortByOrder(arraylist* l, int (*compare)(void*, void*));
 char* al_listToString(arraylist* l, char* (*toStringFunction)(void*));
 

@@ -4,10 +4,18 @@
 
 #include "List.h"
 
-#define TYPE_ERROR printf("Error: unknown type.\n"); exit(1)
-
-// Futura implementazione (non va)
-#define GENERIC_FUNCTION(x, func) l->genericlist. ## x ##  = ## x ## _ ## func
+/**
+ * Libreria che generalizza il concetto di lista permettendo la scelta automatica in funzione dell'implementazione interna.
+ * L'utente è tenuto a specificare quale implementazione intende utilizzare (a seconda delle sue esigenze), scegliendo
+ * fra quelle disponibili al momento:
+ * 	- Arraylist [al] = implementato con un array interno.
+ * 	- LinkedList [ul] = implementato con una lista linkata.
+ * 	
+ * Per intenderci, questa è la "classe wrapper" che fa da "padre" alle "classi figlie" ArrayList e UnidirectionalLinkedList.
+ * 
+ * @author Michele Dusi <michele.dusi.it@ieee.org>
+ * 
+ */
 
 list* initList(l_type chosen_type) {
 	list* l = malloc(sizeof(list));
@@ -16,7 +24,7 @@ list* initList(l_type chosen_type) {
 			l->genericlist.ul = ul_initList();
 			break;
 		case bl:
-//			l->genericlist->bl = bl_initList();
+			l->genericlist.bl = bl_initList();
 			break;
 		case al:
 			l->genericlist.al = al_initList();
@@ -34,7 +42,7 @@ void cleanList(list* l) {
 			ul_cleanList(l->genericlist.ul);
 			break;
 		case bl:
-//			bl_cleanList(l->genericlist.bl);
+			bl_cleanList(l->genericlist.bl);
 			break;
 		case al:
 			al_cleanList(l->genericlist.al);
@@ -51,7 +59,7 @@ void purgeList(list* l) {
 			ul_purgeList(l->genericlist.ul);
 			break;
 		case bl:
-//			bl_purgeList(l->genericlist.bl);
+			bl_purgeList(l->genericlist.bl);
 			break;
 		case al:
 			al_purgeList(l->genericlist.al);
@@ -68,7 +76,7 @@ void insertElementFirst(list* l, void* new_element_data) {
 			ul_insertElementFirst(l->genericlist.ul, new_element_data);
 			break;
 		case bl:
-//			bl_insertElementFirst(l->genericlist.bl, new_element_data);
+			bl_insertElementFirst(l->genericlist.bl, new_element_data);
 			break;
 		case al:
 			al_insertElementFirst(l->genericlist.al, new_element_data);
@@ -84,7 +92,7 @@ void insertElementLast(list* l, void* new_element_data) {
 			ul_insertElementLast(l->genericlist.ul, new_element_data);
 			break;
 		case bl:
-//			bl_insertElementLast(l->genericlist.bl, new_element_data);
+			bl_insertElementLast(l->genericlist.bl, new_element_data);
 			break;
 		case al:
 			al_insertElementLast(l->genericlist.al, new_element_data);
@@ -100,7 +108,7 @@ void insertElementAtPosition(list* l, void* new_element_data, int pos)  {
 			ul_insertElementAtPosition(l->genericlist.ul, new_element_data, pos);
 			break;
 		case bl:
-//			bl_insertElementFirst(l->genericlist.bl, new_element_data, pos);
+			bl_insertElementAtPosition(l->genericlist.bl, new_element_data, pos);
 			break;
 		case al:
 			al_insertElementAtPosition(l->genericlist.al, new_element_data, pos);
@@ -116,7 +124,7 @@ void deleteFirstElement(list* l) {
 			ul_deleteFirstElement(l->genericlist.ul);
 			break;
 		case bl:
-//			bl_deleteFirstElement(l->genericlist.bl);
+			bl_deleteFirstElement(l->genericlist.bl);
 			break;
 		case al:
 			al_deleteFirstElement(l->genericlist.al);
@@ -132,7 +140,7 @@ void deleteLastElement(list* l) {
 			ul_deleteLastElement(l->genericlist.ul);
 			break;
 		case bl:
-//			bl_deleteLastElement(l->genericlist.bl);
+			bl_deleteLastElement(l->genericlist.bl);
 			break;
 		case al:
 			al_deleteLastElement(l->genericlist.al);
@@ -148,7 +156,7 @@ void deleteElementAtPosition(list* l, int pos) {
 			ul_deleteElementAtPosition(l->genericlist.ul, pos);
 			break;
 		case bl:
-//			bl_deleteElementAtPosition(l->genericlist.bl, pos);
+			bl_deleteElementAtPosition(l->genericlist.bl, pos);
 			break;
 		case al:
 			al_deleteElementAtPosition(l->genericlist.al, pos);
@@ -163,7 +171,7 @@ void deleteElementsByConditions(list* l, bool (*condition)(void*)) {
 			ul_deleteElementsByConditions(l->genericlist.ul, condition);
 			break;
 		case bl:
-//			bl_deleteElementsByConditions(l->genericlist.bl, condition);
+			bl_deleteElementsByConditions(l->genericlist.bl, condition);
 			break;
 		case al:
 			al_deleteElementsByConditions(l->genericlist.al, condition);
@@ -180,7 +188,7 @@ void* getHeadContent(list* l) {
 			content = ul_getHeadContent(l->genericlist.ul);
 			break;
 		case bl:
-//			content = bl_getHeadContent(l->genericlist.bl);
+			content = bl_getHeadContent(l->genericlist.bl);
 			break;
 		case al:
 			content = al_getHeadContent(l->genericlist.al);
@@ -198,7 +206,7 @@ void* extractHeadContent(list* l) {
 			content = ul_extractHeadContent(l->genericlist.ul);
 			break;
 		case bl:
-//			content = bl_extractHeadContent(l->genericlist.bl);
+			content = bl_extractHeadContent(l->genericlist.bl);
 			break;
 		case al:
 			content = al_extractHeadContent(l->genericlist.al);
@@ -216,7 +224,7 @@ void* extractElementAtPosition(list* l, int pos) {
 			content = ul_extractElementAtPosition(l->genericlist.ul, pos);
 			break;
 		case bl:
-//			content = bl_extractElementAtPosition(l->genericlist.bl, pos);
+			content = bl_extractElementAtPosition(l->genericlist.bl, pos);
 			break;
 		case al:
 			content = al_extractElementAtPosition(l->genericlist.al, pos);
@@ -234,7 +242,7 @@ void* getTailContent(list* l) {
 			content = ul_getTailContent(l->genericlist.ul);
 			break;
 		case bl:
-//			content = bl_getTailContent(l->genericlist.bl);
+			content = bl_getTailContent(l->genericlist.bl);
 			break;
 		case al:
 			content = al_getTailContent(l->genericlist.al);
@@ -252,7 +260,7 @@ void* getElementContentAtPosition(list* l, int pos) {
 			content = ul_getElementContentAtPosition(l->genericlist.ul, pos);
 			break;
 		case bl:
-//			content = bl_getElementContentAtPosition(l->genericlist.bl, pos);
+			content = bl_getElementContentAtPosition(l->genericlist.bl, pos);
 			break;
 		case al:
 			content = al_getElementContentAtPosition(l->genericlist.al, pos);
@@ -268,7 +276,7 @@ int getListSize(list* l) {
 		case ul:
 			return ul_getListSize(l->genericlist.ul);
 		case bl:
-//			return bl_getListSize(l->genericlist.bl);
+			return bl_getListSize(l->genericlist.bl);
 		case al:
 			return al_getListSize(l->genericlist.al);
 		default:
@@ -281,7 +289,7 @@ int getElementPosition(list* l, void* element_content) {
 		case ul:
 			return ul_getElementPosition(l->genericlist.ul, element_content);
 		case bl:
-//			return bl_getElementPosition(l->genericlist.bl, element_content);
+			return bl_getElementPosition(l->genericlist.bl, element_content);
 		case al:
 			return al_getElementPosition(l->genericlist.al, element_content);
 		default:
@@ -294,7 +302,7 @@ bool containsElement(list* l, bool (*condition)(void*)) {
 		case ul:
 			return ul_containsElement(l->genericlist.ul, condition);
 		case bl:
-//			return bl_containsElement(l->genericlist.bl, condition);
+			return bl_containsElement(l->genericlist.bl, condition);
 		case al:
 			return al_containsElement(l->genericlist.al, condition);
 		default:
@@ -308,7 +316,7 @@ void swapTwoElements(list* l, int pos1, int pos2) {
 			ul_swapTwoElements(l->genericlist.ul, pos1, pos2);
 			break;
 		case bl:
-//			bl_swapTwoElements(l->genericlist.bl, pos1, pos2);
+			bl_swapTwoElements(l->genericlist.bl, pos1, pos2);
 			break;
 		case al:
 			al_swapTwoElements(l->genericlist.al, pos1, pos2);
@@ -326,7 +334,7 @@ list* cloneOrderedList(list* l, void* (*clone)(void*)) {
 			cloned_list->genericlist.ul = ul_cloneOrderedList(l->genericlist.ul, clone);
 			break;
 		case bl:
-//			cloned_list->genericlist.bl = bl_cloneOrderedList(l->genericlist.bl, clone);
+			cloned_list->genericlist.bl = bl_cloneOrderedList(l->genericlist.bl, clone);
 			break;
 		case al:
 			cloned_list->genericlist.al = al_cloneOrderedList(l->genericlist.al, clone);
@@ -351,7 +359,7 @@ list* concatenateTwoLists(list* l1, list* l2, void* (*clone)(void*)) {
 			cloned_list->genericlist.ul = ul_concatenateTwoLists(l1->genericlist.ul, l2->genericlist.ul, clone);
 			break;
 		case bl:
-//			cloned_list->genericlist.bl = bl_concatenateTwoLists(l1->genericlist.bl, l2->genericlist.bl, clone);
+			cloned_list->genericlist.bl = bl_concatenateTwoLists(l1->genericlist.bl, l2->genericlist.bl, clone);
 			break;
 		case al:
 			cloned_list->genericlist.al = al_concatenateTwoLists(l1->genericlist.al, l2->genericlist.al, clone);
@@ -369,7 +377,7 @@ void* getMinimumContent(list* l, int (*compare)(void*, void*)) {
 			content = ul_getMinimumContent(l->genericlist.ul, compare);
 			break;
 		case bl:
-//			content = bl_getMinimumContent(l->genericlist.bl, compare);
+			content = bl_getMinimumContent(l->genericlist.bl, compare);
 			break;
 		case al:
 			content = al_getMinimumContent(l->genericlist.al, compare);
@@ -387,7 +395,7 @@ void* getMaximumContent(list* l, int (*compare)(void*, void*)) {
 			content = ul_getMaximumContent(l->genericlist.ul, compare);
 			break;
 		case bl:
-//			content = bl_getMaximumContent(l->genericlist.bl, compare);
+			content = bl_getMaximumContent(l->genericlist.bl, compare);
 			break;
 		case al:
 			content = al_getMaximumContent(l->genericlist.al, compare);
@@ -398,13 +406,51 @@ void* getMaximumContent(list* l, int (*compare)(void*, void*)) {
 	return content;
 }
 
+list* getSubList(list* l, int start_pos, int end_pos, void* (*clone)(void*)) {
+	list* sublist = malloc(sizeof(list));
+	sublist->type = l->type;
+	switch (l->type) {
+		case ul:
+			sublist->genericlist.ul = ul_getSubList(l->genericlist.ul, start_pos, end_pos);
+			break;
+		case bl:
+			sublist->genericlist.bl = bl_getSubList(l->genericlist.bl, start_pos, end_pos);
+			break;
+		case al:
+			sublist->genericlist.al = al_getSubList(l->genericlist.al, start_pos, end_pos);
+			break;
+		default:
+			TYPE_ERROR;
+	}
+	return sublist;
+}
+
+list* cloneSubList(list* l, int start_pos, int end_pos, void* (*clone)(void*)) {
+	list* sublist = malloc(sizeof(list));
+	sublist->type = l->type;
+	switch (l->type) {
+		case ul:
+			sublist->genericlist.ul = ul_cloneSubList(l->genericlist.ul, start_pos, end_pos, clone);
+			break;
+		case bl:
+			sublist->genericlist.bl = bl_cloneSubList(l->genericlist.bl, start_pos, end_pos, clone);
+			break;
+		case al:
+			sublist->genericlist.al = al_cloneSubList(l->genericlist.al, start_pos, end_pos, clone);
+			break;
+		default:
+			TYPE_ERROR;
+	}
+	return sublist;
+}
+
 void sortByOrder(list* l, int (*compare)(void*, void*)) {
 	switch (l->type) {
 		case ul:
 			ul_sortByOrder(l->genericlist.ul, compare);
 			break;
 		case bl:
-//			bl_sortByOrder(l->genericlist.bl, compare);
+			bl_sortByOrder(l->genericlist.bl, compare);
 			break;
 		case al:
 			al_sortByOrder(l->genericlist.al, compare);
@@ -420,7 +466,7 @@ char* listToString(list* l, char* (*toStringFunction)(void*)) {
 			return ul_listToString(l->genericlist.ul, toStringFunction);
 			break;
 		case bl:
-//			return bl_listToString(l->genericlist.bl, toStringFunction);
+			return bl_listToString(l->genericlist.bl, toStringFunction);
 			break;
 		case al:
 			return al_listToString(l->genericlist.al, toStringFunction);
@@ -430,3 +476,73 @@ char* listToString(list* l, char* (*toStringFunction)(void*)) {
 	}
 	return NULL;
 }
+
+/* Conversione */
+
+/**
+ * A causa dell'implementazione della struct "list", essa contiene il riferimento ad un arraylist o ad una linkedlist (singola o doppia).
+ * E' possibile modificare il tipo interno della lista attraverso questa funzione, per rendere più semplici alcune operazioni
+ * su particolari tipi di liste.
+ */
+void convertInnerListTypeTo(list* l, l_type new_type) {
+	switch (new_type) {
+		// Analizzo il tipo di DESTINAZIONE:
+		case ul:
+			// Conversione in UL
+			switch (l->type) {
+				case ul:
+					// Identity
+					break;
+				case bl:
+					l->genericlist.ul = bl_convertToULinkedList(l->genericlist.bl);
+					break;
+				case al:
+					l->genericlist.ul = al_convertToULinkedList(l->genericlist.al);
+					break;
+			}
+			l->type = ul;
+			break;
+		case bl:
+			// Conversione in BL
+			switch (l->type) {
+				case ul:
+					l->genericlist.ul = bl_convertToULinkedList(l->genericlist.bl);
+					break;
+				case bl:
+					// Identity
+					break;
+				case al:
+					l->genericlist.ul = bl_convertToULinkedList(l->genericlist.bl);
+					break;
+			}
+			l->type = bl;
+			break;
+		case al:
+			// Conversione in AL
+			switch (l->type) {
+				case ul:
+					l->genericlist.al = ul_convertToArrayList(l->genericlist.ul);
+					break;
+				case bl:
+					l->genericlist.al = bl_convertToArrayList(l->genericlist.bl);
+					break;
+				case al:
+					// Identity
+					break;
+			}
+			l->type = al;
+			break;
+		default:
+			TYPE_ERROR;
+	}
+	
+	// Ho due switch innestati.
+	// TODO -> matrice di puntatori a funzione dove il primo indice della cella indica il tipo di provenienza,
+	// il secondo indice il tipo di destinazione (FUTURA IMPLEMENTAZIONE).
+}
+
+
+
+
+
+

@@ -1,21 +1,18 @@
-#ifndef ARRAYLIST_H_
-	#include "ArrayList.h"
-#endif
-
-#ifndef UNIDIRECTIONALLIST_H_
-	#include "UnidirectionalList.h"
-#endif
-
-/* Future implementation:
-#ifndef UNIDIRECTIONALLIST_H_
-	#include "BidirectionalList.h"
-#endif
-*/
-
 #ifndef LIST_H_
 #define LIST_H_
 
+#include "UnidirectionalList.h"
+#include "BidirectionalList.h"
+#include "ArrayList.h"
+
+#include "Conversion.h"
+
+#ifndef TYPE_ERROR
+	#define TYPE_ERROR printf("Error: unknown type.\n"); exit(1)
+#endif
+
 typedef enum l_type {ul, bl, al} l_type;
+const int list_t_number = 3;
 
 typedef struct list {
 	l_type type;
@@ -26,7 +23,7 @@ typedef struct list {
 	 */
 	union {
 		ulinked_list* ul;
-		//blinked_list* bl;
+		blinked_list* bl;
 		arraylist* al;
 	} genericlist;
 } list;
@@ -54,7 +51,10 @@ list* cloneOrderedList(list* l, void* (*clone)(void*));
 list* concatenateTwoLists(list* l11, list* l22, void* (*clone)(void*));
 void* getMinimumContent(list* l, int (*compare)(void*, void*));
 void* getMaximumContent(list* l, int (*compare)(void*, void*));
+list* getSubList(list* l, int start_pos, int end_pos, void* (*clone)(void*));
+list* cloneSubList(list* l, int start_pos, int end_pos, void* (*clone)(void*));
 void sortByOrder(list* l, int (*compare)(void*, void*));
 char* listToString(list* l, char* (*toStringFunction)(void*));
 
+void convertInnerListTypeTo(list* l, l_type new_type);
 #endif

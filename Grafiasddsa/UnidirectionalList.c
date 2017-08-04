@@ -1,13 +1,15 @@
-#include "UnidirectionalList.h"
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-#define SWAP(a, b) a = a + b; b = a - b; a = a - b
+#include "UnidirectionalList.h"
+
+#ifndef MEMORY_ERROR
+#	define MEMORY_ERROR printf("Error: Cannot allocate memory.\n"); exit(1)
+#endif
 
 /**
- * Libreria che permette la gestione di una lista.
+ * Libreria che permette la gestione di una lista linkata.
  * 
  * @author Michele Dusi <michele.dusi.it@ieee.org>
  * 
@@ -19,8 +21,7 @@
 ulinked_list* ul_initList() {
 	ulinked_list* new_list = malloc(sizeof(ulinked_list));
 	if (new_list == NULL) {
-		// TODO Errore OutOfMemory
-		exit(0);
+		MEMORY_ERROR;
 	}
 	new_list->size = 0;
 	new_list->head = NULL;
@@ -46,8 +47,8 @@ static ulinked_list_node* ul_getTail(ulinked_list* l) {
  */
 void ul_insertElementFirst(ulinked_list* l, void* new_element_data) {
 	ulinked_list_node* new_element = malloc(sizeof(ulinked_list_node));
-	if (new_element == NULL) {
-		// TODO errore
+	if (!new_element) {
+		MEMORY_ERROR;
 	}
 	new_element->data = new_element_data;
 	new_element->next = l->head;
@@ -60,8 +61,8 @@ void ul_insertElementFirst(ulinked_list* l, void* new_element_data) {
  */
 void ul_insertElementLast(ulinked_list* l, void* new_element_data) {
 	ulinked_list_node* new_element = malloc(sizeof(ulinked_list_node));
-	if (new_element == NULL) {
-		// TODO errore
+	if (!new_element) {
+		MEMORY_ERROR;
 	}
 	new_element->data = new_element_data;
 	new_element->next = NULL;
@@ -86,8 +87,8 @@ void ul_insertElementAtPosition(ulinked_list* l, void* new_element_data, int pos
 		ul_insertElementFirst(l, new_element_data);
 	} else {
 		ulinked_list_node* new_element = malloc(sizeof(ulinked_list_node));
-		if (new_element == NULL) {
-			// TODO errore
+		if (!new_element) {
+			MEMORY_ERROR;
 		}
 		ulinked_list_node* iterator = l->head;
 		for (int i = 0; i < pos - 1 && i < l->size - 1; i++) {
@@ -297,7 +298,7 @@ void ul_swapTwoElements(ulinked_list* l, int pos1, int pos2) {
 		// DAFUQ
 	} else {
 		if (pos1 > pos2)
-			SWAP(pos1, pos2);		// Mi assicuro che pos1 < pos2
+			INT_SWAP(pos1, pos2);		// Mi assicuro che pos1 < pos2
 		// Scambio i due elementi
 		ulinked_list_node* aux = ul_extractElementAtPosition(l, pos1);
 		ul_insertElementAtPosition(l, ul_extractElementAtPosition(l, pos2 - 1), pos1);
@@ -317,6 +318,9 @@ ulinked_list* ul_cloneOrderedList(ulinked_list* l, void* (*clone)(void*)) {
 	// Clono la testa
 	if (l->size) {
 		aux = malloc(sizeof(ulinked_list_node));
+		if (!aux) {
+			MEMORY_ERROR;
+		}
 		aux->data = clone(ul_getHeadContent(l));
 		aux->next = NULL;
 		new_list->head = aux;
@@ -326,6 +330,9 @@ ulinked_list* ul_cloneOrderedList(ulinked_list* l, void* (*clone)(void*)) {
 	ulinked_list_node* new_element;
 	for (int i = 0; i < l->size; i++) {
 		new_element = malloc(sizeof(ulinked_list_node));
+		if (!new_element) {
+			MEMORY_ERROR;
+		}
 		new_element->data = clone(iterator->data);
 		// Aggiorno i puntatori/iteratori
 		aux->next = new_element;			// Aux tiene in memoria il penultimo elemento aggiunto alla nuova lista
@@ -347,6 +354,9 @@ ulinked_list* ul_cloneOrderedList(ulinked_list* l, void* (*clone)(void*)) {
 ulinked_list* ul_cloneUnorderedList(ulinked_list* l, void* (*clone)(void*)) {
 	// Inizializzo la nuova lista
 	ulinked_list* new_list = malloc(sizeof(ulinked_list));
+	if (!new_list) {
+		MEMORY_ERROR;
+	}
 	new_list->size = 0;
 	new_list->head = NULL;
 	// Clono gli elementi della lista originaria
@@ -437,6 +447,34 @@ void* ul_getMaximumContent(ulinked_list* l, int (*compare)(void*, void*)) {
 }
 
 /**
+ * Restituisce la sottolista che parte dall'elemento di indice start_pos all'elemento di end_pos.
+ * L'elemento end_pos è <emph>escluso</emph>, mentre viene incluso l'elemento start_pos.
+ * 
+ * <i>NOTA:</i> Non viene creata una nuova lista, gli elementi della lista originaria non vengono modificati.
+ * Pertanto un qualsiasi cambiamento alla lista originaria può provocare modifiche alla sottolista, e viceversa.
+ * 
+ * <i>NOTA:</i>Si consiglia di non fare operazioni sugli estremi della sottolista. Questa funzione restituisce una lista
+ * comoda per operazioni di lettura o, al massimo, inserimento/rimozione <emph>al centro</emph> della sottolista.
+ */
+ulinked_list* ul_getSubList(ulinked_list* l, int start_pos, int end_pos) {
+	ulinked_list* sublist = malloc(sizeof(ulinked_list));
+	if (!sublist) {
+		MEMORY_ERROR;
+	}
+	sublist->size = end_pos - start_pos;
+	sublist->head = ul_getElementAtPosition(l, start_pos);
+	return sublist;
+}
+
+/**
+ * Restituisce una sottolista che parte dall'elemento di indice start_pos fino all'elemento di indice end_pos;
+ * La lista originale non viene modificata, e ogni singolo elemento viene clonato dalla funzione passata come parametro.
+ */
+ulinked_list* ul_cloneSubList(ulinked_list* l, int start_pos, int end_pos, void* (*clone)(void*)) {
+	return ul_cloneOrderedList(ul_getSubList(l, start_pos, end_pos), clone);
+}
+
+/**
  * Ordina una lista in modo <i>crescente</i> secondo una relazione d'ordine definita dall'utente e passata come parametro.
  * La relazione deve essere implementata come una funzione che prende in ingresso il contenuto di due nodi, 
  * e li confronta restituendo:
@@ -459,11 +497,17 @@ char* ul_listToString(ulinked_list* l, char* (*toString)(void*)) {
 	// STRING_TITLE_LENGTH + max_data_length * l->size
 	int max_data_length = 20; // TODO Allocazione dinamica della memoria
 	s = malloc(sizeof(STRING_TITLE_LENGTH + max_data_length * l->size));
+	if (!s) {
+		MEMORY_ERROR;
+	}
 	sprintf(s, STRING_TITLE, l->size);
 	ulinked_list_node* iterator = l->head;
-	while (iterator) {
+	for (int i = 0; i < l->size; i++) {
 		strcat(s, toString(iterator->data));
 		iterator = iterator->next;
 	}
 	return s;
 }
+
+
+
