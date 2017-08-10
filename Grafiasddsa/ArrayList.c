@@ -24,8 +24,16 @@
 #endif
 
 /**
+ * "Classe" che implementa una lista come array.
+ * 
+ * @author Michele Dusi <michele.dusi.it@ieee.org>
+ * 
+ */
+
+/**
  * Inizializzazione di una lista vuota con capacità iniziale personalizzata.
  */
+// TESTATO
 arraylist* al_initListWithCapacity(int cap) {
 	arraylist* new_list = malloc(sizeof(arraylist));
 	if (!new_list) {
@@ -163,6 +171,10 @@ void al_deleteElementAtPosition(arraylist* l, int pos) {
 
 /**
  * Rimuove tutti gli elementi che soddisfano una data condizione.
+ * Attenzione: gli elementi vengono rimossi dalla lista, ma non dalla memoria. In caso non esistano puntatori ad essi,
+ * questi verrebbero persi irrimediabilmente e la memoria verrebbe inutilmente sprecata.
+ * Se si vogliono eliminare gli elementi stessi, si consiglia di utilizzare il metodo "al_purgeElementsByCondition".
+ * Se invece si vogliono ottenere gli elementi cancellati dalla lista, utilizzare il metodo "al_extractElementsByCondition".
  */
 void al_deleteElementsByConditions(arraylist* l, bool (*condition)(void*)) {
 	for (int i = 0; i < l->size;) {
@@ -196,6 +208,30 @@ void* al_extractHeadContent(arraylist* l) {
 	}
 	checkAndDecreaseCapacity(l);
 	return aux;
+}
+
+/** 
+ * Data una condizione booleana, estrae dalla lista tutti gli elementi che soddisfano quella condizione,
+ * restituendoli all'interno di una nuova lista.
+ */
+arraylist* al_extractElementsByCondition(arraylist* l, bool (*condition)(void*)) {
+	arraylist* extracted_list = al_initListWithCapacity(l->size);
+	for (int i = 0; i < l->size; i++) {
+		if (condition(l->array[i])) {
+			void* aux = al_extractElementAtPosition(l, i);
+			al_insertElementLast(extracted_list, aux);
+		}
+	}
+	checkAndDecreaseCapacity(extracted_list);
+	return extracted_list;
+}
+
+/**
+ * Elimina tutti gli elementi della lista che soddisfano una data condizione.
+ * Il contenuto degli elementi viene rimosso anche dalla memoria.
+ */
+void al_purgeElementsByCondition(arraylist* l, bool (*condition)(void*)) {
+	al_purgeList(al_extractElementsByCondition(l, condition));
 }
 
 /**
@@ -411,7 +447,7 @@ arraylist* al_cloneSubList(arraylist* l, int start_pos, int end_pos, void* (*clo
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
 void al_sortByOrder(arraylist* l, int (*compare)(void*, void*)) {
-	// Implemento un lento e noioso BubbleSort
+	// Implemento un BubbleSort
 	for (int i = 0; i < l->size; i++) {
 		for (int j = l->size - 1; j > i; j--) {
 			if (compare(l->array[j], l->array[j - 1]) < 0) {
@@ -441,6 +477,7 @@ char* al_listToString(arraylist* l, char* (*toStringFunction)(void*)) {
 		int new_length = strlen(final_str) + strlen(aux_string) + 2;
 		final_str = realloc(final_str, new_length * sizeof(char));
 		strcat(final_str, aux_string);
+		free(aux_string);
 	}
 	strcat(final_str, "\n");
 	return final_str;
@@ -455,22 +492,20 @@ char* al_listToString(arraylist* l, char* (*toStringFunction)(void*)) {
 //////////////////////////////////////////////////////
 // TESTING //
 
-
 typedef struct {
 	char first_letters[2];
 	int three_numbers;
 	char last_letters[2];
-} string;
+} targa;
 
-
-char getRandomChar() {
+static char getRandomChar() {
 	return (char)((rand() % ('Z' - 'A')) + 'A');
 }
 
-string* initString() {
-	string* new = malloc(sizeof(string));
+targa* initRandomTarga() {
+	targa* new = malloc(sizeof(targa));
 	if (!new) {
-		MEMORY_ERROR;
+		printf("Memory Error: cannot create new \"targa\".\n");
 	}
 	new->first_letters[0] = getRandomChar();
 	new->first_letters[1] = getRandomChar();
@@ -480,29 +515,31 @@ string* initString() {
 	return new;
 }
 
-
 char* stringifyMyStruct(void* my_object) {
-	char* created_string = malloc(sizeof(char) * 13);
+	char* created_string = malloc(sizeof(char) * 12);
 	if (!created_string) {
-		MEMORY_ERROR;
+		printf("Memory Error: cannot create new \"targa\".\n");
 	}
-	sprintf(created_string, "[%c%c %03d %c%c] ", 
-		((string*)my_object)->first_letters[0],
-		((string*)my_object)->first_letters[1],
-		((string*)my_object)->three_numbers,
-		((string*)my_object)->last_letters[0],
-		((string*)my_object)->last_letters[1]);
+	sprintf(created_string, "[%c%c %03d %c%c]", 
+		((targa*)my_object)->first_letters[0],
+		((targa*)my_object)->first_letters[1],
+		((targa*)my_object)->three_numbers,
+		((targa*)my_object)->last_letters[0],
+		((targa*)my_object)->last_letters[1]);
 	return created_string;
 }
 
 int compareMyStruct(void* obj1, void* obj2) {
-	return strcmp(
-		stringifyMyStruct(((string*)obj1)), 
-		stringifyMyStruct(((string*)obj2)));
+	char* targa1 = stringifyMyStruct((targa*)obj1);
+	char* targa2 = stringifyMyStruct((targa*)obj2);
+	int result = strcmp(targa1, targa2);
+	free(targa1);
+	free(targa2);
+	return result;
 }
 
-bool hasEvenNumber(void* targa) {
-	if (((string*)targa)->three_numbers % 2 == 0) {
+bool hasEvenNumber(void* my_targa) {
+	if (((targa*)my_targa)->three_numbers % 2 == 0) {
 		return true;
 	} else {
 		return false;
@@ -511,38 +548,43 @@ bool hasEvenNumber(void* targa) {
 
 int main(void) {
 	arraylist* arr = al_initList();
-	char* string_of_list;
 	
 	srand(time(NULL));
 	
 	int dim = 10;
 	
+	// Popolo la lista
 	for (int i = 0; i < dim; i++) {
-		al_insertElementLast(arr, initString());
+		al_insertElementLast(arr, initRandomTarga());
 	}
 	
 	// Stampo la lista
-	string_of_list = al_listToString(arr, stringifyMyStruct);
-	printf("%s\n", string_of_list);
-	free(string_of_list);
+	char* str1 = al_listToString(arr, stringifyMyStruct);
+	printf("%s\n", str1);
+	free(str1);
+	
 	
 	// Ordino la lista
 	al_sortByOrder(arr, compareMyStruct);
 	printf("Ho ordinato la lista\n\n");
 	
+	
 	// Stampo la lista
-	string_of_list = al_listToString(arr, stringifyMyStruct);
-	printf("%s\n", string_of_list);
-	free(string_of_list);
+	char* str2 = al_listToString(arr, stringifyMyStruct);
+	printf("%s\n", str2);
+	free(str2);
+	
 	
 	// Elimino le targhe pari
-	al_deleteElementsByConditions(arr, hasEvenNumber);
+	al_purgeElementsByCondition(arr, hasEvenNumber);
 	printf("Elimino le targhe pari.\n\n");
 	
+	
 	// Stampo la lista
-	string_of_list = al_listToString(arr, stringifyMyStruct);
-	printf("%s\n", string_of_list);
-	free(string_of_list);
+	char* str3 = al_listToString(arr, stringifyMyStruct);
+	printf("%s\n", str3);
+	free(str3);
+	
 	
 	// FREE
 	al_purgeList(arr);

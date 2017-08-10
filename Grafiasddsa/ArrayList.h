@@ -10,11 +10,11 @@ typedef struct arraylist {
 } arraylist;
 
 arraylist* al_initListWithCapacity(int cap);
-arraylist* al_initList();
-void al_cleanList(arraylist* l);
-void al_purgeList(arraylist* l);
+arraylist* al_initList(); // OK
+void al_cleanList(arraylist* l); // OK
+void al_purgeList(arraylist* l); // OK
 void al_insertElementFirst(arraylist* l, void* new_element_data);
-void al_insertElementLast(arraylist* l, void* new_element_data);
+void al_insertElementLast(arraylist* l, void* new_element_data); // OK
 void al_insertElementAtPosition(arraylist* l, void* new_element_data, int pos);
 void al_deleteFirstElement(arraylist* l);
 void al_deleteLastElement(arraylist* l);
@@ -23,6 +23,8 @@ void al_deleteElementsByConditions(arraylist* l, bool (*condition)(void*));
 void* al_getHeadContent(arraylist* l);
 void* al_extractHeadContent(arraylist* l);
 void* al_extractElementAtPosition(arraylist* l, int pos);
+arraylist* al_extractElementsByCondition(arraylist* l, bool (*condition)(void*)); // NEW
+void al_purgeElementsByCondition(arraylist* l, bool (*condition)(void*)); // NEW
 void* al_getTailContent(arraylist* l);
 void* al_getElementContentAtPosition(arraylist* l, int pos);
 int al_getListSize(arraylist* l);
@@ -35,7 +37,7 @@ void* al_getMinimumContent(arraylist* l, int (*compare)(void*, void*));
 void* al_getMaximumContent(arraylist* l, int (*compare)(void*, void*));
 arraylist* al_getSubList(arraylist* l, int start_pos, int end_pos);
 arraylist* al_cloneSubList(arraylist* l, int start_pos, int end_pos, void* (*clone)(void*));
-void al_sortByOrder(arraylist* l, int (*compare)(void*, void*));
-char* al_listToString(arraylist* l, char* (*toStringFunction)(void*));
+void al_sortByOrder(arraylist* l, int (*compare)(void*, void*)); // OK
+char* al_listToString(arraylist* l, char* (*toStringFunction)(void*)); // OK
 
 #endif
