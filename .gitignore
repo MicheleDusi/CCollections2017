@@ -51,3 +51,6 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Bash script for easy compilation
+*.sh
