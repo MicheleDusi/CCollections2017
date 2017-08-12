@@ -32,28 +32,28 @@ void al_deleteElementAtPosition(arraylist* l, int pos);
 void al_deleteElementsByCondition(arraylist* l, bool (*condition)(void*));
 
 // Purging Elements
-void al_purgeFirstElement(arraylist* l); /// TODO
-void al_purgeLastElement(arraylist* l); /// TODO
-void al_purgeElementAtPosition(arraylist* l, int pos); /// TODO
+void al_purgeFirstElement(arraylist* l);
+void al_purgeLastElement(arraylist* l);
+void al_purgeElementAtPosition(arraylist* l, int pos);
 void al_purgeElementsByCondition(arraylist* l, bool (*condition)(void*)); // NEW
 
 // Getting Elements
 void* al_getFirstElement(arraylist* l);
 void* al_getLastElement(arraylist* l);
 void* al_getElementAtPosition(arraylist* l, int pos);
-arraylist* al_getElementsByCondition(arraylist* l, bool (*condition)(void*)); /// TODO
+arraylist* al_getElementsByCondition(arraylist* l, bool (*condition)(void*));
 arraylist* al_getSubList(arraylist* l, int start_pos, int end_pos);
 
 // Extracting Elements
 void* al_extractFirstElement(arraylist* l);
-void* al_extractLastElement(arraylist* l); /// TODO
+void* al_extractLastElement(arraylist* l);
 void* al_extractElementAtPosition(arraylist* l, int pos);
 arraylist* al_extractElementsByCondition(arraylist* l, bool (*condition)(void*)); // NEW
 
 // Searching Elements
-bool al_containsElement(arraylist* l, void* element_content); /// TODO
+bool al_containsElement(arraylist* l, void* element_content);
 bool al_containsElementByCondition(arraylist* l, bool (*condition)(void*));
-int al_countElementsByCondition(arraylist* l, bool (*condition)(void*)); /// TODO
+int al_countElementsByCondition(arraylist* l, bool (*condition)(void*));
 int al_getElementPosition(arraylist* l, void* element_content);
 
 // Cloning and Managing List

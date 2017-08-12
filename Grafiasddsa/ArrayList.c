@@ -17,6 +17,15 @@
 #	define MEMORY_ERROR printf("Error: Cannot allocate memory.\n"); exit(1)
 #endif
 
+#ifndef UNVALID_POSITION_ERROR
+#	define UNVALID_POSITION_ERROR(pos) printf("Error: The position %d is unvalid.\n", pos )
+#endif
+
+#ifndef EMPTY_SIZE
+#	define EMPTY_SIZE 0
+#	define EMPTY_SIZE_ERROR(instr) printf("Error: Cannot execute \"%s\" function on empty list.", instr )
+#endif
+
 #ifndef STRING_FORMATTING
 #	define STRING_FORMATTING
 	const char* STRING_TITLE = "LISTA [size: %d]\n";
@@ -24,16 +33,18 @@
 #endif
 
 /**
- * "Classe" che implementa una lista come array.
+ * Libreria che implementa una lista come array e fornisce numerose funzioni che
+ * ne permettono un utilizzo semplificato.
  * 
  * @author Michele Dusi <michele.dusi.it@ieee.org>
  * 
  */
 
+///// Initializing List
+
 /**
  * Inizializzazione di una lista vuota con capacità iniziale personalizzata.
  */
-// TESTATO
 arraylist* al_initListWithCapacity(int cap) {
 	arraylist* new_list = malloc(sizeof(arraylist));
 	if (!new_list) {
@@ -55,6 +66,17 @@ arraylist* al_initList() {
 	return al_initListWithCapacity(DEFAULT_CAPACITY);
 }
 
+// Size
+
+/**
+ * Restituisce la quantità di elementi presenti nella lista.
+ */
+int al_getListSize(arraylist* l) {
+	return l->size;
+}
+
+// Cancelling List
+
 /**
  * Elimina la lista passata come parametro, liberando le zone di memoria occupate
  * dalla struttura ArrayList e dal vettore interno.
@@ -74,14 +96,17 @@ void al_purgeList(arraylist* l) {
 	for (int i = 0; i < l->size; i++) {
 		free(l->array[i]);
 	}
-	al_cleanList(l);
+	free(l->array);
+	free(l);
 }
+
+// Static Utility Functions
 
 /**
  * Controlla la dimensione dell'arraylist dopo che è stata effettuata un'aggiunta di un elemento.
  * In caso la capacità debba essere aumentata, viene re-allocato l'array in una porzione di memoria maggiore.
  */
-static void checkAndIncreaseCapacity(arraylist* l) {
+static void al_checkAndIncreaseCapacity(arraylist* l) {
 	if (l->size > l->capacity * INCREASING_CHECK) {
 		int new_capacity = (int)(l->capacity * INCREASING_FACTOR);
 		l->array = realloc(l->array, new_capacity * sizeof(void*));
@@ -93,7 +118,7 @@ static void checkAndIncreaseCapacity(arraylist* l) {
  * Controlla la dimensione dell'arraylist dopo che è stata effettuata una rimozione.
  * In caso la capacità possa essere ridotta, viene re-allocato l'array in una porzione di memoria minore.
  */
-static void checkAndDecreaseCapacity(arraylist* l) {
+static void al_checkAndDecreaseCapacity(arraylist* l) {
 	if (l->size < l->capacity * DECREASING_CHECK
 			&& l->capacity > MINIMUM_CAPACITY) {
 		int new_capacity = (int)(l->capacity * DECREASING_FACTOR);
@@ -103,69 +128,97 @@ static void checkAndDecreaseCapacity(arraylist* l) {
 }
 
 /**
- * Controlla che la posizione inserita sia ammessa nella lista.
+ * Controlla che la posizione inserita sia ammissibile nella lista.
  */
 static bool al_checkPositionValidity(arraylist* l, int pos) {
 	return pos >= 0 && pos < l->size;
 }
 
+// Inserting Elements
+
 /** 
  * Inserimento di un elemento in testa alla lista.
  */
-void al_insertElementFirst(arraylist* l, void* new_element_data) {
+void al_insertFirstElement(arraylist* l, void* new_element_data) {
 	for (int i = l->size; i > 0; i--) {
 		l->array[i] = l->array[i - 1];
 	}
 	l->array[0] = new_element_data;
 	l->size++;
-	checkAndIncreaseCapacity(l);
+	al_checkAndIncreaseCapacity(l);
 }
 
 /**
  * Inserimento di un elemento in coda alla lista.
  */
-void al_insertElementLast(arraylist* l, void* new_element_data) {
+void al_insertLastElement(arraylist* l, void* new_element_data) {
 	l->array[l->size] = new_element_data;
 	l->size++;
-	checkAndIncreaseCapacity(l);
+	al_checkAndIncreaseCapacity(l);
 }
 
+/**
+ * Inserisce un elemento alla posizione desiderata nella lista.
+ * Tutti gli altri elementi successivi vengono spostati in avanti di una posizione.
+ */
 void al_insertElementAtPosition(arraylist* l, void* new_element_data, int pos) {
-	if (al_checkPositionValidity(l, pos)) {
+	if (!al_checkPositionValidity(l, pos)) {
+		UNVALID_POSITION_ERROR(pos);
+	} else {
 		for (int i = l->size; i > pos; i--) {
 			l->array[i] = l->array[i - 1];
 		}
 		l->array[pos] = new_element_data;
 		l->size++;
-		checkAndIncreaseCapacity(l);
-	} else {
-		// TODO errore
+		al_checkAndIncreaseCapacity(l);
 	}
 }
 
+// Deleting Elements
+
+/**
+ * Elimina l'elemento in prima posizione.
+ * Se la lista è vuota, viene generato un messaggio a video e non viene effettuata alcuna eliminazione.
+ */
 void al_deleteFirstElement(arraylist* l) {
-	for (int i = 0; i < l->size - 1; i++) {
-		l->array[i] = l->array[i + 1];
+	if (l->size == EMPTY_SIZE) {
+		EMPTY_SIZE_ERROR("deleteFirstElement");
+	} else {
+		for (int i = 0; i < l->size - 1; i++) {
+			l->array[i] = l->array[i + 1];
+		}
+		l->size--;
+		al_checkAndDecreaseCapacity(l);
 	}
-	l->size--;
-	checkAndDecreaseCapacity(l);
 }
 
+/**
+ * Elimina l'elemento in ultima posizione.
+ * Se la lista è vuota, viene generato un messaggio a video e non viene effettuata alcuna eliminazione.
+ */
 void al_deleteLastElement(arraylist* l) {
-	l->size--;
-	checkAndDecreaseCapacity(l);
+	if (l->size == EMPTY_SIZE) {
+		EMPTY_SIZE_ERROR("deleteLastElement");
+	} else {
+		l->size--;
+		al_checkAndDecreaseCapacity(l);
+	}
 }
 
 /**
  * Rimuove un elemento alla posizione desiderata.
  */
 void al_deleteElementAtPosition(arraylist* l, int pos) {
-	if (al_checkPositionValidity(l, pos)) {
+	if (l->size == EMPTY_SIZE) {
+		EMPTY_SIZE_ERROR("deleteElementAtPosition");
+	} else if (!al_checkPositionValidity(l, pos)) {
+		UNVALID_POSITION_ERROR(pos);
+	} else {
 		for (int i = pos; i < l->size - 1; i++) {
 			l->array[i] = l->array[i + 1];
 		}
 		l->size--;
-		checkAndDecreaseCapacity(l);
+		al_checkAndDecreaseCapacity(l);
 	}
 }
 
@@ -176,7 +229,7 @@ void al_deleteElementAtPosition(arraylist* l, int pos) {
  * Se si vogliono eliminare gli elementi stessi, si consiglia di utilizzare il metodo "al_purgeElementsByCondition".
  * Se invece si vogliono ottenere gli elementi cancellati dalla lista, utilizzare il metodo "al_extractElementsByCondition".
  */
-void al_deleteElementsByConditions(arraylist* l, bool (*condition)(void*)) {
+void al_deleteElementsByCondition(arraylist* l, bool (*condition)(void*)) {
 	for (int i = 0; i < l->size;) {
 		if (condition(l->array[i])) {
 			l->size--;
@@ -187,27 +240,205 @@ void al_deleteElementsByConditions(arraylist* l, bool (*condition)(void*)) {
 			i++;
 		}
 	}
-	checkAndDecreaseCapacity(l);
+	al_checkAndDecreaseCapacity(l);
 }
+
+// Purging Elements
+
+/**
+ * Elimina il primo elemento dalla lista e dalla memoria.
+ * I puntatori eventualmente inizializzati in precedenza alla porzione di memoria relativa
+ * non potranno più essere utilizzati dopo la chiamata a questa funzione.
+ */
+void al_purgeFirstElement(arraylist* l) {
+	if (l->size == EMPTY_SIZE) {
+		EMPTY_SIZE_ERROR("purgeFirstElement");
+	} else {
+		free(l->array[0]);
+		l->size--;
+		for (int i = 0; i < l->size; i++) {
+			l->array[i] = l->array[i + 1];
+		}
+		al_checkAndDecreaseCapacity(l);
+	}
+}
+
+/**
+ * Elimina l'ultimo elemento dalla lista e dalla memoria.
+ * I puntatori eventualmente inizializzati in precedenza alla porzione di memoria relativa
+ * non potranno più essere utilizzati dopo la chiamata a questa funzione.
+ */
+void al_purgeLastElement(arraylist* l) {
+	if (l->size == EMPTY_SIZE) {
+		EMPTY_SIZE_ERROR("purgeLastElement");
+	} else {
+		free(l->array[l->size - 1]);
+		l->size--;
+		al_checkAndDecreaseCapacity(l);
+	}
+}
+
+/**
+ * Elimina l'elemento alla posizione desiderata dalla lista e dalla memoria.
+ * I puntatori eventualmente inizializzati in precedenza alla porzione di memoria relativa
+ * non potranno più essere utilizzati dopo la chiamata a questa funzione.
+ */
+void al_purgeElementAtPosition(arraylist* l, int pos) {
+	if (l->size == EMPTY_SIZE) {
+		EMPTY_SIZE_ERROR("purgeElementAtPosition");
+	} else if (!al_checkPositionValidity(l, pos)) {
+		UNVALID_POSITION_ERROR(pos);
+	} else {
+		free(l->array[pos]);
+		l->size--;
+		for (int i = pos; i < l->size; i++) {
+			l->array[i] = l->array[i + 1];
+		}
+		al_checkAndDecreaseCapacity(l);
+	}
+}
+
+/**
+ * Elimina tutti gli elementi della lista che soddisfano una data condizione.
+ * Il contenuto degli elementi viene rimosso anche dalla memoria.
+ */
+void al_purgeElementsByCondition(arraylist* l, bool (*condition)(void*)) {
+	al_purgeList(al_extractElementsByCondition(l, condition));
+}
+
+// Getting Elements
 
 /**
  * Restituisce il contenuto del primo elemento della lista.
  */
-void* al_getHeadContent(arraylist* l) {
-	return l->array[0];
+void* al_getFirstElement(arraylist* l) {
+	if (l->size == EMPTY_SIZE) {
+		EMPTY_SIZE_ERROR("getFirstElement");
+		return NULL;
+	} else {
+		return l->array[0];
+	}
 }
 
 /**
- * Restituisce il contenuto del primo elemento.
+ * Restituisce il contenuto dell'ultimo elemento della lista.
+ * Se la lista è vuota, restituisce NULL.
  */
-void* al_extractHeadContent(arraylist* l) {
+void* al_getLastElement(arraylist* l) {
+	if (l->size == EMPTY_SIZE) {
+		EMPTY_SIZE_ERROR("getLastElement");
+		return NULL;
+	} else {
+		return l->array[l->size - 1];
+	}
+}
+
+/**
+ * Restituisce il contentuto di un elemento alla posizione desiderata.
+ */
+void* al_getElementAtPosition(arraylist* l, int pos) {
+	if (!al_checkPositionValidity(l, pos)) {
+		UNVALID_POSITION_ERROR(pos);
+		return NULL;
+	} else {
+		return l->array[pos];
+	}
+}
+
+/**
+ * Restituisce una lista con i puntatori agli elementi che soddisfano la condizione
+ * passata come parametro. L'operazione non ha effetto sulla lista originaria; nonostante
+ * ciò, un'eventuale rimozione in memoria avrà effetto su entrambe le liste (poichè gli oggetti
+ * contenuti in esse non sono clonati, ma sono gli stessi).
+ */
+arraylist* al_getElementsByCondition(arraylist* l, bool (*condition)(void*)) {
+	arraylist* sublist = al_initListWithCapacity(l->size + 1);
+	for (int i = 0; i < l->size; i++) {
+		if (condition(l->array[i])) {
+			sublist->array[sublist->size] = l->array[i];
+			sublist->size++;
+		}
+	}
+	al_checkAndDecreaseCapacity(sublist);
+	return sublist;
+}
+
+/**
+ * Restituisce la sottolista che parte dall'elemento di indice start_pos all'elemento di end_pos.
+ * L'elemento end_pos è <emph>escluso</emph>, mentre viene incluso l'elemento start_pos.
+ * 
+ * <i>NOTA:</i> Non viene creata una nuova lista, gli elementi della lista originaria non vengono modificati.
+ * Pertanto un qualsiasi cambiamento alla lista originaria può provocare modifiche alla sottolista, e viceversa.
+ * 
+ * <i>NOTA:</i>Si consiglia di NON fare operazioni sugli elementi della sottolista: aggiunta o rimozione di elementi potrebbe comportare la corruzione
+ * dell'intera lista originaria. Questa funzione restituisce una lista comoda unicamente per operazioni di lettura.
+ */
+arraylist* al_getSubList(arraylist* l, int start_pos, int end_pos) {
+	if (!al_checkPositionValidity(l, start_pos)) {
+		UNVALID_POSITION_ERROR(start_pos);
+	} else if (!al_checkPositionValidity(l, end_pos)) {
+		UNVALID_POSITION_ERROR(end_pos);
+	} else if (end_pos <= start_pos) {
+		UNVALID_POSITION_ERROR(end_pos);
+	} else {
+		arraylist* sublist = malloc(sizeof(arraylist));
+		if (!sublist) {
+			MEMORY_ERROR;
+		}
+		sublist->size = end_pos - start_pos;
+		sublist->capacity = l->capacity - start_pos;
+		sublist->array = &(l->array[start_pos]);
+		return sublist;
+	}
+	return NULL;
+}
+
+// Extracting Elements
+
+/**
+ * Restituisce il contenuto del primo elemento, eliminandolo dalla lista.
+ */
+void* al_extractFirstElement(arraylist* l) {
 	void* aux = l->array[0];
 	l->size--;
 	for (int i = 0; i < l->size; i++) {
 		l->array[i] = l->array[i + 1];
 	}
-	checkAndDecreaseCapacity(l);
+	al_checkAndDecreaseCapacity(l);
 	return aux;
+}
+
+/**
+ * Restituisce il contenuto dell'ultimo elemento, eliminandolo dalla lista.
+ */
+void* al_extractLastElement(arraylist* l) {
+	if (l->size == EMPTY_SIZE) {
+		EMPTY_SIZE_ERROR("extractLastElement");
+		return NULL;
+	} else {
+		l->size--;
+		al_checkAndDecreaseCapacity(l); // TODO Controllare che questo non corrompa MAI l'ultimo elemento (che ormai non è più considerato nella size).
+		return l->array[l->size];
+	}
+}
+
+/**
+ * Estrae un elemento alla posizione desiderata, lo cancella dalla lista e lo restituisce come puntatore.
+ * Il primo elemento della lista ha posizione "0".
+ */
+void* al_extractElementAtPosition(arraylist* l, int pos) {
+	if (!al_checkPositionValidity(l, pos)) {
+		UNVALID_POSITION_ERROR(pos);
+		return NULL;
+	} else {
+		void* aux = l->array[pos];
+		l->size--;
+		for (int i = pos; i < l->size; i++) {
+			l->array[i] = l->array[i + 1];
+		}
+		al_checkAndDecreaseCapacity(l);
+		return aux;
+	}
 }
 
 /** 
@@ -219,63 +450,50 @@ arraylist* al_extractElementsByCondition(arraylist* l, bool (*condition)(void*))
 	for (int i = 0; i < l->size; i++) {
 		if (condition(l->array[i])) {
 			void* aux = al_extractElementAtPosition(l, i);
-			al_insertElementLast(extracted_list, aux);
+			al_insertLastElement(extracted_list, aux);
 		}
 	}
-	checkAndDecreaseCapacity(extracted_list);
+	al_checkAndDecreaseCapacity(extracted_list);
 	return extracted_list;
 }
 
-/**
- * Elimina tutti gli elementi della lista che soddisfano una data condizione.
- * Il contenuto degli elementi viene rimosso anche dalla memoria.
- */
-void al_purgeElementsByCondition(arraylist* l, bool (*condition)(void*)) {
-	al_purgeList(al_extractElementsByCondition(l, condition));
-}
+// Searching Elements
 
 /**
- * Estrae un elemento alla posizione desiderata, lo cancella dalla lista e lo restituisce come puntatore.
- * Il primo elemento della lista ha posizione "0".
+ * Restituisce TRUE se la lista contiene il puntatore passato come parametro.
  */
-void* al_extractElementAtPosition(arraylist* l, int pos) {
-	if (al_checkPositionValidity(l, pos)) {
-		void* aux = l->array[pos];
-		l->size--;
-		for (int i = pos; i < l->size; i++) {
-			l->array[i] = l->array[i + 1];
+bool al_containsElement(arraylist* l, void* element_content) {
+	for (int i = 0; i < l->size; i++) {
+		if (l->array[i] == element_content) {
+			return true;
 		}
-		checkAndDecreaseCapacity(l);
-		return aux;
-	} else {
-		return NULL;
 	}
+	return false;
 }
 
 /**
- * Restituisce il contenuto dell'ultimo elemento della lista.
- * Se la lista è vuota, restituisce NULL.
+ * Verifica che all'interno della lista sia presente almeno un elemento che soddisfi una data condizione.
  */
-void* al_getTailContent(arraylist* l) {
-	if (l->size > 0)
-		return l->array[l->size - 1];
-	return NULL;
+bool al_containsElementByCondition(arraylist* l, bool (*condition)(void*)) {
+	for (int i = 0; i < l->size; i++) {
+		if (condition(l->array[i])) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /**
- * Restituisce il contentuto di un elemento alla posizione desiderata.
+ * Restituisce il numero di elementi della lista che soddisfano una data condizione.
  */
-void* al_getElementContentAtPosition(arraylist* l, int pos) {
-	if (al_checkPositionValidity(l, pos))
-		return l->array[pos];
-	return NULL;
-}
-
-/**
- * Restituisce la quantità di elementi presenti nella lista.
- */
-int al_getListSize(arraylist* l) {
-	return l->size;
+int al_countElementsByCondition(arraylist* l, bool (*condition)(void*)) {
+	int count = 0;
+	for (int i = 0; i < l->size; i++) {
+		if (condition(l->array[i])) {
+			count++;
+		}
+	}
+	return count;
 }
 
 /**
@@ -291,35 +509,7 @@ int al_getElementPosition(arraylist* l, void* element_content) {
 	return -1;
 }
 
-/**
- * Verifica che all'interno della lista sia presente almeno un elemento che soddisfi una data condizione.
- */
-bool al_containsElement(arraylist* l, bool (*condition)(void*)) {
-	for (int i = 0; i < l->size; i++) {
-		if (condition(l->array[i])) {
-			return true;
-		}
-	}
-	return false;
-}
-
-/**
- * Scambia di posto due elementi della lista, date le loro posizioni.
- */
-void al_swapTwoElements(arraylist* l, int pos1, int pos2) {
-	if (al_checkPositionValidity(l, pos1) && al_checkPositionValidity(l, pos2)) {
-		void* aux = malloc(sizeof(void*));
-		if (!aux) {
-			MEMORY_ERROR;
-		}
-		aux = l->array[pos1];
-		l->array[pos1] = l->array[pos2];
-		l->array[pos2] = aux;
-		free(aux);
-	} else {
-		// TODO Errore
-	}
-}
+// Cloning and Managing List
 
 /**
  * Clona una lista, data in ingresso una funzione per la clonazione del contenuto di un elemento.
@@ -335,6 +525,14 @@ arraylist* al_cloneOrderedList(arraylist* l, void* (*clone)(void*)) {
 	new_list->size = l->size;
 	// Fine
 	return new_list;
+}
+
+/**
+ * Restituisce una sottolista che parte dall'elemento di indice start_pos fino all'elemento di indice end_pos;
+ * La lista originale non viene modificata, e ogni singolo elemento viene clonato dalla funzione passata come parametro.
+ */
+arraylist* al_cloneSubList(arraylist* l, int start_pos, int end_pos, void* (*clone)(void*)) {
+	return al_cloneOrderedList(al_getSubList(l, start_pos, end_pos), clone);
 }
 
 /**
@@ -356,6 +554,51 @@ arraylist* al_concatenateTwoLists(arraylist* l1, arraylist* l2, void* (*clone)(v
 	}
 	// Fine
 	return new_list;
+}
+
+// Sorting List
+
+/**
+ * Scambia di posto due elementi della lista, date le loro posizioni.
+ */
+void al_swapTwoElements(arraylist* l, int pos1, int pos2) {
+	if (!al_checkPositionValidity(l, pos1)) {
+		UNVALID_POSITION_ERROR(pos1);
+	} else if (!al_checkPositionValidity(l, pos2)) {
+		UNVALID_POSITION_ERROR(pos2);
+	} else if (pos1 >= pos2) {
+		UNVALID_POSITION_ERROR(pos2);
+	} else {
+		void* aux = malloc(sizeof(void*));
+		if (!aux) {
+			MEMORY_ERROR;
+		}
+		aux = l->array[pos1];
+		l->array[pos1] = l->array[pos2];
+		l->array[pos2] = aux;
+		free(aux);
+	}
+}
+
+/**
+ * Ordina una lista in modo <i>crescente</i> secondo una relazione d'ordine definita dall'utente e passata come parametro.
+ * La relazione deve essere implementata come una funzione che prende in ingresso il contenuto di due nodi, 
+ * e li confronta restituendo:
+ * - un numero negativo se il primo dato è "minore" del secondo (stando alla relazione).
+ * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
+ * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
+ */
+void al_sortByOrder(arraylist* l, int (*compare)(void*, void*)) {
+	// Implemento un BubbleSort
+	for (int i = 0; i < l->size; i++) {
+		for (int j = l->size - 1; j > i; j--) {
+			if (compare(l->array[j], l->array[j - 1]) < 0) {
+				void* aux = l->array[j];
+				l->array[j] = l->array[j - 1];
+				l->array[j -1] = aux;
+			}
+		}
+	}
 }
 
 /**
@@ -404,60 +647,7 @@ void* al_getMaximumContent(arraylist* l, int (*compare)(void*, void*)) {
 	}
 }
 
-/**
- * Restituisce la sottolista che parte dall'elemento di indice start_pos all'elemento di end_pos.
- * L'elemento end_pos è <emph>escluso</emph>, mentre viene incluso l'elemento start_pos.
- * 
- * <i>NOTA:</i> Non viene creata una nuova lista, gli elementi della lista originaria non vengono modificati.
- * Pertanto un qualsiasi cambiamento alla lista originaria può provocare modifiche alla sottolista, e viceversa.
- * 
- * <i>NOTA:</i>Si consiglia di NON fare operazioni sugli elementi della sottolista: aggiunta o rimozione di elementi potrebbe comportare la corruzione
- * dell'intera lista originaria. Questa funzione restituisce una lista comoda unicamente per operazioni di lettura.
- */
-arraylist* al_getSubList(arraylist* l, int start_pos, int end_pos) {
-	if (al_checkPositionValidity(l, start_pos) && al_checkPositionValidity(l, end_pos)) {
-		arraylist* sublist = malloc(sizeof(arraylist));
-		if (!sublist) {
-			MEMORY_ERROR;
-		}
-		sublist->size = end_pos - start_pos;
-		sublist->capacity = l->capacity - start_pos;
-		sublist->array = &(l->array[start_pos]);
-		return sublist;
-	} else {
-		// Posizioni non valide
-		return NULL;
-	}
-}
-
-/**
- * Restituisce una sottolista che parte dall'elemento di indice start_pos fino all'elemento di indice end_pos;
- * La lista originale non viene modificata, e ogni singolo elemento viene clonato dalla funzione passata come parametro.
- */
-arraylist* al_cloneSubList(arraylist* l, int start_pos, int end_pos, void* (*clone)(void*)) {
-	return al_cloneOrderedList(al_getSubList(l, start_pos, end_pos), clone);
-}
-
-/**
- * Ordina una lista in modo <i>crescente</i> secondo una relazione d'ordine definita dall'utente e passata come parametro.
- * La relazione deve essere implementata come una funzione che prende in ingresso il contenuto di due nodi, 
- * e li confronta restituendo:
- * - un numero negativo se il primo dato è "minore" del secondo (stando alla relazione).
- * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
- * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
- */
-void al_sortByOrder(arraylist* l, int (*compare)(void*, void*)) {
-	// Implemento un BubbleSort
-	for (int i = 0; i < l->size; i++) {
-		for (int j = l->size - 1; j > i; j--) {
-			if (compare(l->array[j], l->array[j - 1]) < 0) {
-				void* aux = l->array[j];
-				l->array[j] = l->array[j - 1];
-				l->array[j -1] = aux;
-			}
-		}
-	}
-}
+// Visualizing List
 
 /**
  * Restituisce una stringa che rappresenta gli elementi contenuti all'interno della lista.
@@ -483,12 +673,7 @@ char* al_listToString(arraylist* l, char* (*toStringFunction)(void*)) {
 	return final_str;
 }
 
-
-
-
-
-
-
+//////////////////////////////////////////////////////
 //////////////////////////////////////////////////////
 // TESTING //
 
@@ -515,17 +700,20 @@ targa* initRandomTarga() {
 	return new;
 }
 
+#define TARGA_STRING_FORMAT "[%c%c %03d %c%c]"
+
 char* stringifyMyStruct(void* my_object) {
-	char* created_string = malloc(sizeof(char) * 12);
+	targa* aux_targa = (targa*)my_object;
+	char* created_string = malloc(sizeof(char) * (strlen(TARGA_STRING_FORMAT) *2));
 	if (!created_string) {
 		printf("Memory Error: cannot create new \"targa\".\n");
 	}
-	sprintf(created_string, "[%c%c %03d %c%c]", 
-		((targa*)my_object)->first_letters[0],
-		((targa*)my_object)->first_letters[1],
-		((targa*)my_object)->three_numbers,
-		((targa*)my_object)->last_letters[0],
-		((targa*)my_object)->last_letters[1]);
+	sprintf(created_string, TARGA_STRING_FORMAT, 
+		(aux_targa)->first_letters[0],
+		(aux_targa)->first_letters[1],
+		(aux_targa)->three_numbers,
+		(aux_targa)->last_letters[0],
+		(aux_targa)->last_letters[1]);
 	return created_string;
 }
 
@@ -538,12 +726,27 @@ int compareMyStruct(void* obj1, void* obj2) {
 	return result;
 }
 
-bool hasEvenNumber(void* my_targa) {
-	if (((targa*)my_targa)->three_numbers % 2 == 0) {
+bool hasEvenNumber(void* obj) {
+	targa* my_targa = (targa*) obj;
+	if (my_targa->three_numbers % 2 == 0) {
 		return true;
 	} else {
 		return false;
 	}
+}
+
+void* cloneMyStruct(void* obj) {
+	targa* my_targa = (targa*)obj;
+	targa* new = malloc(sizeof(targa));
+	if (!new) {
+		printf("Memory Error: cannot create new \"targa\".\n");
+	}
+	new->first_letters[0] = my_targa->first_letters[0];
+	new->first_letters[1] = my_targa->first_letters[1];
+	new->three_numbers = my_targa->three_numbers;
+	new->last_letters[0] = my_targa->last_letters[0];
+	new->last_letters[1] = my_targa->last_letters[1];
+	return new;
 }
 
 int main(void) {
@@ -555,7 +758,7 @@ int main(void) {
 	
 	// Popolo la lista
 	for (int i = 0; i < dim; i++) {
-		al_insertElementLast(arr, initRandomTarga());
+		al_insertLastElement(arr, initRandomTarga());
 	}
 	
 	// Stampo la lista
