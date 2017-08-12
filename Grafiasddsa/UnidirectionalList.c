@@ -42,7 +42,7 @@ ulinked_list* ul_initList() {
  * <b>NON</b> elimina gli oggetti a cui i puntatori nella lista puntano.
  */
 void ul_cleanList(ulinked_list* l) {
-	for (int i = 0; i < l->size; i++) {
+	while (l->size != EMPTY_SIZE) {
 		ul_deleteFirstElement(l);
 	}
 	free(l);
@@ -84,7 +84,7 @@ static ulinked_list_node* ul_getLastNode(ulinked_list* l) {
 /** 
  * Inserimento di un elemento in testa alla lista.
  */
-void ul_insertElementFirst(ulinked_list* l, void* new_element_data) {
+void ul_insertFirstElement(ulinked_list* l, void* new_element_data) {
 	ulinked_list_node* new_element = malloc(sizeof(ulinked_list_node));
 	if (!new_element) {
 		MEMORY_ERROR;
@@ -98,7 +98,7 @@ void ul_insertElementFirst(ulinked_list* l, void* new_element_data) {
 /**
  * Inserimento di un elemento in coda alla lista.
  */
-void ul_insertElementLast(ulinked_list* l, void* new_element_data) {
+void ul_insertLastElement(ulinked_list* l, void* new_element_data) {
 	ulinked_list_node* new_element = malloc(sizeof(ulinked_list_node));
 	if (!new_element) {
 		MEMORY_ERROR;
@@ -106,10 +106,11 @@ void ul_insertElementLast(ulinked_list* l, void* new_element_data) {
 	new_element->data = new_element_data;
 	new_element->next = NULL;
 	
-	if (l->size == EMPTY_SIZE)
+	if (l->size == EMPTY_SIZE) {
 		l->head = new_element;
-	else
+	} else {
 		ul_getLastNode(l)->next = new_element;
+	}
 	l->size++;
 }
 
@@ -123,7 +124,7 @@ void ul_insertElementAtPosition(ulinked_list* l, void* new_element_data, int pos
 	if (pos < 0) {
 		// TODO ERRORE
 	} else if (pos == 0) {
-		ul_insertElementFirst(l, new_element_data);
+		ul_insertFirstElement(l, new_element_data);
 	} else {
 		ulinked_list_node* new_element = malloc(sizeof(ulinked_list_node));
 		if (!new_element) {
@@ -304,15 +305,63 @@ void* ul_extractElementAtPosition(ulinked_list* l, int pos) {
 	}
 }
 
+/**
+ * Elimina tutti gli elementi della lista che soddisfano una data condizione.
+ * Il contenuto degli elementi viene rimosso anche dalla memoria.
+ */
+void ul_purgeElementsByCondition(ulinked_list* l, bool (*condition)(void*)) {
+	ul_purgeList(ul_extractElementsByCondition(l, condition));
+}
+
+/**
+ * Restituisce una sotto-lista con tutti gli elementi che soddisfano una data condizione.
+ * Gli elementi sono esattamente gli stessi (i puntatori puntano agli stessi elementi della lista originale),
+ * ma la "struct" lista è differente: sarà perciò sufficiente pulirla con il metodo "ul_cleanList" al termine del suo utilizzo.
+ */
+ulinked_list* ul_getElementsByCondition(ulinked_list* l, bool (*condition)(void*)) {
+	ulinked_list* sublist = ul_initList();
+	ulinked_list_node* iterator = l->head;
+	// Creo un "nodo fake" per accelerare le operazioni di aggiunta in coda
+	ulinked_list_node* last_taken = malloc(sizeof(ulinked_list_node));
+	if (!last_taken) {
+		MEMORY_ERROR;
+	}
+	sublist->head = last_taken;
+	// Ciclo su tutta la lista originale
+	for (int i = 0; i < l->size; i++) {
+		// Se un elemento soddisfa la condizione
+		if (condition(iterator->data)) {
+			// Creo un nuovo nodo nella sottolista
+			last_taken->next = malloc(sizeof(ulinked_list_node));
+			if (!(last_taken->next)) {
+				MEMORY_ERROR;
+			}
+			last_taken = last_taken->next;
+			last_taken->data = iterator->data;
+			sublist->size++;
+		}
+		iterator = iterator->next;
+	}
+	last_taken->next = NULL;
+	// Rimuovo il nodo fake ausiliario
+	iterator = sublist->head;
+	sublist->head = sublist->head->next;
+	free(iterator);
+	
+	return sublist;	
+}
+
 /** 
  * Data una condizione booleana, estrae dalla lista tutti gli elementi che soddisfano quella condizione,
  * restituendoli all'interno di una nuova lista.
+ * In pratica, "separa" la lista in due sottoliste dove nella nuova lista gli elementi soddisfano la condizione, 
+ * mentre nella vecchia lista no.
  */
 ulinked_list* ul_extractElementsByCondition(ulinked_list* l, bool (*condition)(void*)) {
 	ulinked_list* extracted_list = ul_initList();
 	ulinked_list_node* iterator = l->head;
 	// Creo un "nodo fake" per accelerare le operazioni di aggiunta in coda
-	ul_insertElementFirst(extracted_list, NULL);
+	ul_insertFirstElement(extracted_list, NULL);
 	ulinked_list_node* last_extracted = extracted_list->head;
 	
 	// Ciclo su tutti gli elementi (tranne che per la testa)
@@ -346,14 +395,6 @@ ulinked_list* ul_extractElementsByCondition(ulinked_list* l, bool (*condition)(v
 		extracted_list->size++;
 	}
 	return extracted_list;
-}
-
-/**
- * Elimina tutti gli elementi della lista che soddisfano una data condizione.
- * Il contenuto degli elementi viene rimosso anche dalla memoria.
- */
-void ul_purgeElementsByCondition(ulinked_list* l, bool (*condition)(void*)) {
-	ul_purgeList(ul_extractElementsByCondition(l, condition));
 }
 
 /**
@@ -525,7 +566,7 @@ ulinked_list* ul_cloneUnorderedList(ulinked_list* l, void* (*clone)(void*)) {
 	// Clono gli elementi della lista originaria
 	ulinked_list_node* iterator = l->head;
 	for (int i = 0; i < l->size; i++) {
-		ul_insertElementFirst(new_list, clone(iterator->data));
+		ul_insertFirstElement(new_list, clone(iterator->data));
 		iterator = iterator->next;
 	}
 	// Restituisco la lista creata
@@ -663,7 +704,7 @@ ulinked_list* ul_cloneSubList(ulinked_list* l, int start_pos, int end_pos, void*
 		sublist->size = end_pos - start_pos - 1; // Alla fine ri-aggiungerò 1 quando inserirò la testa.
 		
 		ulinked_list_node* iterator_l = ul_getNodeAtPosition(l, start_pos);
-		ul_insertElementFirst(sublist, clone(iterator_l->data));
+		ul_insertFirstElement(sublist, clone(iterator_l->data));
 		ulinked_list_node* iterator_sublist = sublist->head;
 		
 		for (int i = 1; i < sublist->size; i++) {
@@ -718,7 +759,7 @@ char* ul_listToString(ulinked_list* l, char* (*toStringFunction)(void*)) {
 		// Nella stringa ausiliaria alloco la descrizione dell'elemento corrente
 		new_elem_string = toStringFunction(iterator->data);
 		// Aumento la dimensione della stringa buffer
-		s = realloc(s, strlen(s) + strlen(new_elem_string) + 5);
+		s = realloc(s, strlen(s) + strlen(new_elem_string) + 4);
 		// Concateno la descrizione al buffer
 		strcat(s, new_elem_string);
 		strcat(s, "   ");
@@ -817,7 +858,7 @@ int main(void) {
 	
 	// Popolo la lista
 	for (int i = 0; i < dim; i++) {
-		ul_insertElementFirst(my_list, initRandomTarga());
+		ul_insertFirstElement(my_list, initRandomTarga());
 	}
 	
 	// Stampo la lista
@@ -825,7 +866,7 @@ int main(void) {
 	printf("(1) %s\n", str1);
 	free(str1);
 	
-	ulinked_list* sublist = ul_cloneSubList(my_list, 0, 10, cloneMyStruct);
+	ulinked_list* sublist = ul_getElementsByCondition(my_list, hasEvenNumber);
 	
 	// Stampo la lista
 	str1 = ul_listToString(sublist, stringifyMyStruct);
@@ -833,8 +874,8 @@ int main(void) {
 	free(str1);
 	
 	// FREE
+	ul_cleanList(sublist);
 	ul_purgeList(my_list);
-	ul_purgeList(sublist);
 		
 	return 0;
 }

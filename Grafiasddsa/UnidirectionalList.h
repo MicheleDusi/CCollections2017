@@ -28,13 +28,21 @@ ulinked_list* ul_initList(); // OK
 void ul_cleanList(ulinked_list* l); // OK
 void ul_purgeList(ulinked_list* l); // OK
 
-void ul_insertElementFirst(ulinked_list* l, void* new_element_data); // OK
+/*
+ * Insert
+ * Delete
+ * Purge
+ * Get
+ * Extract
+ */
+
+void ul_insertFirstElement(ulinked_list* l, void* new_element_data); // OK
 void ul_deleteFirstElement(ulinked_list* l); // OK
 void ul_purgeFirstElement(ulinked_list* l); // OK // NEW
 void* ul_getFirstElement(ulinked_list* l); // OK
 void* ul_extractFirstElement(ulinked_list* l); // OK
 
-void ul_insertElementLast(ulinked_list* l, void* new_element_data); // OK
+void ul_insertLastElement(ulinked_list* l, void* new_element_data); // OK
 void ul_deleteLastElement(ulinked_list* l); // OK
 void ul_purgeLastElement(ulinked_list* l); // OK // NEW
 void* ul_getLastElement(ulinked_list* l); // OK
@@ -50,6 +58,7 @@ void ul_insertAllElementsLast(ulinked_list* l, ulinked_list* elements); // OK
 
 void ul_deleteElementsByCondition(ulinked_list* l, bool (*condition)(void*)); // OK
 void ul_purgeElementsByCondition(ulinked_list* l, bool (*condition)(void*)); // OK // NEW
+ulinked_list* ul_getElementsByCondition(ulinked_list* l, bool (*condition)(void*)); // OK // NEW
 ulinked_list* ul_extractElementsByCondition(ulinked_list* l, bool (*condition)(void*)); // OK // NEW
 
 int ul_getListSize(ulinked_list* l); // OK
