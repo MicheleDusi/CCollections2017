@@ -485,11 +485,12 @@ ulinked_list* ul_cloneOrderedList(ulinked_list* l, void* (*clone)(void*)) {
 		aux->data = clone(ul_getFirstElement(l));
 		aux->next = NULL;
 		new_list->head = aux;
+		new_list->size++;
 	}
 	// Clono il resto
-	ulinked_list_node* iterator = l->head;			// Utilizzo un secondo iteratore (il primo in realtà è aux) per evitare di ciclare sulle liste più di una volta.
+	ulinked_list_node* iterator = l->head->next;			// Utilizzo un secondo iteratore (il primo in realtà è aux) per evitare di ciclare sulle liste più di una volta.
 	ulinked_list_node* new_element;
-	for (int i = 0; i < l->size; i++) {
+	for (int i = 1; i < l->size; i++) {
 		new_element = malloc(sizeof(ulinked_list_node));
 		if (!new_element) {
 			MEMORY_ERROR;
@@ -499,6 +500,7 @@ ulinked_list* ul_cloneOrderedList(ulinked_list* l, void* (*clone)(void*)) {
 		aux->next = new_element;			// Aux tiene in memoria il penultimo elemento aggiunto alla nuova lista
 		aux = aux->next;
 		iterator = iterator->next;
+		new_list->size++;
 	}
 	new_element->next = NULL; // Coda
 	// Fine
@@ -550,13 +552,14 @@ ulinked_list* ul_concatenateTwoLists(ulinked_list* l1, ulinked_list* l2, void* (
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
-static ulinked_list_node* ul_getMinimumElement(ulinked_list* l, int (*compare)(void*, void*)) {
+static ulinked_list_node* ul_getMinimumNode(ulinked_list* l, int (*compare)(void*, void*)) {
 	ulinked_list_node* iterator = l->head->next;
 	ulinked_list_node* minimum = l->head;
 	for (int i = 1; i < l->size; i++) {
 		if (compare(iterator->data, minimum->data) < 0) {
 			minimum = iterator;
 		}
+		iterator = iterator->next;
 	}
 	return minimum;
 }
@@ -570,8 +573,8 @@ static ulinked_list_node* ul_getMinimumElement(ulinked_list* l, int (*compare)(v
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
-void* ul_getMinimumContent(ulinked_list* l, int (*compare)(void*, void*)) {
-	return ul_getMinimumElement(l, compare)->data;
+void* ul_getMinimumElement(ulinked_list* l, int (*compare)(void*, void*)) {
+	return ul_getMinimumNode(l, compare)->data;
 }
 
 /**
@@ -583,13 +586,14 @@ void* ul_getMinimumContent(ulinked_list* l, int (*compare)(void*, void*)) {
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
-static ulinked_list_node* ul_getMaximumElement(ulinked_list* l, int (*compare)(void*, void*)) {
+static ulinked_list_node* ul_getMaximumNode(ulinked_list* l, int (*compare)(void*, void*)) {
 	ulinked_list_node* iterator = l->head->next;
 	ulinked_list_node* maximum = l->head;
 	for (int i = 1; i < l->size; i++) {
 		if (compare(iterator->data, maximum->data) > 0) {
 			maximum = iterator;
 		}
+		iterator = iterator->next;
 	}
 	return maximum;
 }
@@ -603,28 +607,41 @@ static ulinked_list_node* ul_getMaximumElement(ulinked_list* l, int (*compare)(v
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
-void* ul_getMaximumContent(ulinked_list* l, int (*compare)(void*, void*)) {
-	return ul_getMaximumElement(l, compare)->data;
+void* ul_getMaximumElement(ulinked_list* l, int (*compare)(void*, void*)) {
+	return ul_getMaximumNode(l, compare)->data;
 }
 
 /**
  * Restituisce la sottolista che parte dall'elemento di indice start_pos all'elemento di end_pos.
  * L'elemento end_pos è <emph>escluso</emph>, mentre viene incluso l'elemento start_pos.
  * 
- * <i>NOTA:</i> Non viene creata una nuova lista, gli elementi della lista originaria non vengono modificati.
- * Pertanto un qualsiasi cambiamento alla lista originaria può provocare modifiche alla sottolista, e viceversa.
+ * <i>NOTA:</i> Viene creata una nuova lista, ma non vengono clonati gli elementi (che pertanto rimangono quelli della lista originale
+ * e non subiscono modifiche).
+ * Un qualsiasi cambiamento alla lista originaria può provocare effetti collaterali alla sottolista, e viceversa.
  * 
  * <i>NOTA:</i>Si consiglia di non fare operazioni sugli estremi della sottolista. Questa funzione restituisce una lista
  * comoda per operazioni di lettura o, al massimo, inserimento/rimozione <emph>al centro</emph> della sottolista.
  */
 ulinked_list* ul_getSubList(ulinked_list* l, int start_pos, int end_pos) {
+	// Inizializzazione di una lista vuota
 	ulinked_list* sublist = malloc(sizeof(ulinked_list));
 	if (!sublist) {
 		MEMORY_ERROR;
 	}
-	sublist->size = end_pos - start_pos;
-	sublist->head = ul_getElementAtPosition(l, start_pos);
-	return sublist;
+	// Controlli sulle posizioni
+	if (!ul_checkPositionValidity(l, start_pos)) {
+		UNVALID_POSITION_ERROR(start_pos);
+	} else if (!ul_checkPositionValidity(l, end_pos)) {
+		UNVALID_POSITION_ERROR(end_pos);
+	} else if (start_pos >= end_pos) {
+		UNVALID_POSITION_ERROR(end_pos);
+	} else {
+		// Linking della sotto-lista
+		sublist->size = end_pos - start_pos;
+		sublist->head = ul_getNodeAtPosition(l, start_pos);
+		return sublist;
+	}
+	return NULL;
 }
 
 /**
@@ -632,7 +649,37 @@ ulinked_list* ul_getSubList(ulinked_list* l, int start_pos, int end_pos) {
  * La lista originale non viene modificata, e ogni singolo elemento viene clonato dalla funzione passata come parametro.
  */
 ulinked_list* ul_cloneSubList(ulinked_list* l, int start_pos, int end_pos, void* (*clone)(void*)) {
-	return ul_cloneOrderedList(ul_getSubList(l, start_pos, end_pos), clone);
+	// Inizializzazione di una lista vuota
+	ulinked_list* sublist = ul_initList();
+	// Controlli sulle posizioni
+	if (!ul_checkPositionValidity(l, start_pos)) {
+		UNVALID_POSITION_ERROR(start_pos);
+	} else if (!ul_checkPositionValidity(l, end_pos - 1)) {
+		UNVALID_POSITION_ERROR(end_pos);
+	} else if (start_pos >= end_pos) {
+		UNVALID_POSITION_ERROR(end_pos);
+	} else {
+		// Clonazione della sotto-lista
+		sublist->size = end_pos - start_pos - 1; // Alla fine ri-aggiungerò 1 quando inserirò la testa.
+		
+		ulinked_list_node* iterator_l = ul_getNodeAtPosition(l, start_pos);
+		ul_insertElementFirst(sublist, clone(iterator_l->data));
+		ulinked_list_node* iterator_sublist = sublist->head;
+		
+		for (int i = 1; i < sublist->size; i++) {
+			iterator_sublist->next = malloc(sizeof(ulinked_list_node)); // Creo un nuovo elemento successivo nella sottolista
+			iterator_sublist = iterator_sublist->next; // Ora l'iteratore sulla sottolista punta al nuovo elemento che sot creando.
+			if (!iterator_sublist) {
+				MEMORY_ERROR;
+			}
+			iterator_l = iterator_l->next;
+			iterator_sublist->data = clone(iterator_l->data);
+		}
+
+		iterator_sublist->next = NULL; // L'ultimo elemento della sottolista ha il successivo nullo.
+		return sublist;
+	}
+	return NULL;
 }
 
 /**
@@ -745,13 +792,27 @@ bool hasEvenNumber(void* obj) {
 	}
 }
 
+void* cloneMyStruct(void* obj) {
+	targa* my_targa = (targa*)obj;
+	targa* new = malloc(sizeof(targa));
+	if (!new) {
+		printf("Memory Error: cannot create new \"targa\".\n");
+	}
+	new->first_letters[0] = my_targa->first_letters[0];
+	new->first_letters[1] = my_targa->first_letters[1];
+	new->three_numbers = my_targa->three_numbers;
+	new->last_letters[0] = my_targa->last_letters[0];
+	new->last_letters[1] = my_targa->last_letters[1];
+	return new;
+}
+
 #include <time.h>
 
 int main(void) {
 	// Inizializzo robe
 	ulinked_list* my_list = ul_initList();
 	srand(time(NULL));
-	int dim = 3;
+	int dim = 10;
 	char* str1;
 	
 	// Popolo la lista
@@ -761,17 +822,19 @@ int main(void) {
 	
 	// Stampo la lista
 	str1 = ul_listToString(my_list, stringifyMyStruct);
-	printf("%s\n", str1);
+	printf("(1) %s\n", str1);
 	free(str1);
 	
+	ulinked_list* sublist = ul_cloneSubList(my_list, 0, 10, cloneMyStruct);
 	
 	// Stampo la lista
-	str1 = ul_listToString(my_list, stringifyMyStruct);
-	printf("%s\n", str1);
+	str1 = ul_listToString(sublist, stringifyMyStruct);
+	printf("(3)%s\n", str1);
 	free(str1);
 	
 	// FREE
 	ul_purgeList(my_list);
+	ul_purgeList(sublist);
 		
 	return 0;
 }

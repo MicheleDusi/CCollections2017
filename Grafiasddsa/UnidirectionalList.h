@@ -58,19 +58,19 @@ int ul_getElementPosition(ulinked_list* l, void* element_content); // OK
 bool ul_containsElement(ulinked_list* l, bool (*condition)(void*)); // OK
 void ul_swapTwoElements(ulinked_list* l, int pos1, int pos2); // OK
 
-ulinked_list* ul_cloneOrderedList(ulinked_list* l, void* (*clone)(void*));
-ulinked_list* ul_cloneUnorderedList(ulinked_list* l, void* (*clone)(void*));
+ulinked_list* ul_cloneOrderedList(ulinked_list* l, void* (*clone)(void*)); // OK
+ulinked_list* ul_cloneUnorderedList(ulinked_list* l, void* (*clone)(void*)); // @deprecated
 
-ulinked_list* ul_getSubList(ulinked_list* l, int start_pos, int end_pos);
-ulinked_list* ul_cloneSubList(ulinked_list* l, int start_pos, int end_pos, void* (*clone)(void*));
+ulinked_list* ul_getSubList(ulinked_list* l, int start_pos, int end_pos); // OK
+ulinked_list* ul_cloneSubList(ulinked_list* l, int start_pos, int end_pos, void* (*clone)(void*)); // OK
 
-ulinked_list* ul_concatenateTwoLists(ulinked_list* l1, ulinked_list* l2, void* (*clone)(void*));
+ulinked_list* ul_concatenateTwoLists(ulinked_list* l1, ulinked_list* l2, void* (*clone)(void*)); // OK
 
-void* ul_getMinimumContent(ulinked_list* l, int (*compare)(void*, void*));
-void* ul_getMaximumContent(ulinked_list* l, int (*compare)(void*, void*));
+void* ul_getMinimumElement(ulinked_list* l, int (*compare)(void*, void*)); // OK
+void* ul_getMaximumElement(ulinked_list* l, int (*compare)(void*, void*)); // OK
 
-void ul_sortByOrder(ulinked_list* l, int (*compare)(void*, void*));
+void ul_sortByOrder(ulinked_list* l, int (*compare)(void*, void*)); // OK
 
-char* ul_listToString(ulinked_list* l, char* (*toStringFunction)(void*));
+char* ul_listToString(ulinked_list* l, char* (*toStringFunction)(void*)); // OK
 
 #endif
