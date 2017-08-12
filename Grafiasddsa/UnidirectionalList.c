@@ -474,6 +474,20 @@ int ul_getElementPosition(ulinked_list* l, void* element_content) {
 }
 
 /**
+ * Verifica che all'interno della lista sia presente un elemento dato come parametro.
+ */
+bool ul_containsElement(ulinked_list* l, void* element_content) {
+	ulinked_list_node* iterator = l->head;
+	for (int i = 0; i < l->size; i++) {
+		if (iterator->data == element_content) {
+			return true;
+		}
+		iterator = iterator->next;
+	}
+	return false;
+}
+
+/**
  * Verifica che all'interno della lista sia presente almeno un elemento che soddisfi una data condizione.
  */
 bool ul_containsElementByCondition(ulinked_list* l, bool (*condition)(void*)) {
@@ -484,6 +498,21 @@ bool ul_containsElementByCondition(ulinked_list* l, bool (*condition)(void*)) {
 		iterator = iterator->next;
 	}
 	return false;
+}
+
+/**
+ * Conta tutti gli elementi che soddisfano una data condizione.
+ */
+int ul_countElementsByCondition(ulinked_list* l, bool (*condition)(void*)) {
+	ulinked_list_node* iterator = l->head;
+	int count = 0;
+	for (int i = 0; i < l->size; i++) {
+		if (condition(iterator->data)) {
+			count++;
+		}
+		iterator = iterator->next;
+	}
+	return count;
 }
 
 /**
@@ -866,15 +895,9 @@ int main(void) {
 	printf("(1) %s\n", str1);
 	free(str1);
 	
-	ulinked_list* sublist = ul_getElementsByCondition(my_list, hasEvenNumber);
-	
-	// Stampo la lista
-	str1 = ul_listToString(sublist, stringifyMyStruct);
-	printf("(3)%s\n", str1);
-	free(str1);
+	printf("Conto targhe pari nella lista: %d\n", ul_countElementsByCondition(my_list, hasEvenNumber));
 	
 	// FREE
-	ul_cleanList(sublist);
 	ul_purgeList(my_list);
 		
 	return 0;

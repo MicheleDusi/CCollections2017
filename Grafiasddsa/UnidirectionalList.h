@@ -66,9 +66,9 @@ void* ul_extractElementAtPosition(ulinked_list* l, int pos); // OK
 ulinked_list* ul_extractElementsByCondition(ulinked_list* l, bool (*condition)(void*)); // OK // NEW
 
 // Searching Elements
-bool ul_containsElement(ulinked_list* l, void* element_content); /// TODO
+bool ul_containsElement(ulinked_list* l, void* element_content); // OK
 bool ul_containsElementByCondition(ulinked_list* l, bool (*condition)(void*)); // OK
-int ul_countElementsByCondition(ulinked_list* l, bool (*condition)(void*)); /// TODO
+int ul_countElementsByCondition(ulinked_list* l, bool (*condition)(void*)); // OK
 int ul_getElementPosition(ulinked_list* l, void* element_content); // OK
 
 // Cloning and Managing List
