@@ -252,16 +252,36 @@ static blinked_list_node* bl_extractNodeAtPosition(blinked_list* l, int pos) {
 		// TAIL
 		return bl_extractTailContent(l);
 	} else {
-		
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		blinked_list_node* iterator = l->head;
-		for (int i = 0; i < pos - 1 && i < l->size - 1; i++) {
-			iterator = iterator->next;
+		blinked_list_node* aux;
+		if (!new_element) {
+			MEMORY_ERROR;
 		}
-		blinked_list_node* aux = iterator->next;
-		iterator->next = iterator->next->next;
-		l->size--;
-		return aux;
+		if (pos < l->size / 2) {
+			// Scorro dall'inizio
+			blinked_list_node* iterator = l->head;
+			for (int i = 0; i < pos - 1 && i < l->size - 1; i++) {
+				iterator = iterator->next;
+			}
+			new_element->next = iterator->next;
+			new_element->prev = iterator;
+			iterator->next = new_element;
+			iterator->next->prev = new_element;
+			
+		} else {
+			// Scorro dalla fine
+			blinked_list_node* iterator = l->tail;
+			for (int i = l->size - 1; i > pos + 1 && i >= 0; i--) {
+				iterator = iterator->prev;
+			}
+			new_element->prev = iterator->prev;
+			new_element->next = iterator;
+			
+			iterator->prev = new_element;
+			iterator->prev->next = new_element;
+			
+		}
+		new_element->data = new_element_data;
+		l->size++;
 	}
 }
 
