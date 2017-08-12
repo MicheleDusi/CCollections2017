@@ -476,7 +476,7 @@ int ul_getElementPosition(ulinked_list* l, void* element_content) {
 /**
  * Verifica che all'interno della lista sia presente almeno un elemento che soddisfi una data condizione.
  */
-bool ul_containsElement(ulinked_list* l, bool (*condition)(void*)) {
+bool ul_containsElementByCondition(ulinked_list* l, bool (*condition)(void*)) {
 	ulinked_list_node* iterator = l->head;
 	for (int i = 0; i < l->size; i++) {
 		if (condition(iterator->data))
