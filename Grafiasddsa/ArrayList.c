@@ -173,6 +173,20 @@ void al_insertElementAtPosition(arraylist* l, void* new_element_data, int pos) {
 		al_checkAndIncreaseCapacity(l);
 	}
 }
+/**
+ * Inserisce tutti gli elementi in coda alla prima lista.
+ * Gli elementi da aggiungere vengono passati come "ulinked_list*".
+ * L'utilizzo di questa funzione provoca la cancellazione della seconda lista, pertanto è
+ * sconsigliata se si vuole unire due liste differenti. In sostituzione, è possibile utilizzare
+ * la funzione "al_concatenateTwoLists" che ricopia le liste in questione senza modificare gli originali.
+ */
+void al_insertAllElementsLast(arraylist* l, arraylist* elements) {
+	for (int i = 0; i < elements->size; i++) {
+		al_insertLastElement(l, elements->array[i]);
+	}
+	free(elements->array);
+	free(elements);
+}
 
 // Deleting Elements
 
@@ -447,10 +461,12 @@ void* al_extractElementAtPosition(arraylist* l, int pos) {
  */
 arraylist* al_extractElementsByCondition(arraylist* l, bool (*condition)(void*)) {
 	arraylist* extracted_list = al_initListWithCapacity(l->size);
-	for (int i = 0; i < l->size; i++) {
+	for (int i = 0; i < l->size;) {
 		if (condition(l->array[i])) {
 			void* aux = al_extractElementAtPosition(l, i);
 			al_insertLastElement(extracted_list, aux);
+		} else {
+			i++;
 		}
 	}
 	al_checkAndDecreaseCapacity(extracted_list);
@@ -749,8 +765,10 @@ void* cloneMyStruct(void* obj) {
 	return new;
 }
 
+//MAIN
 int main(void) {
 	arraylist* arr = al_initList();
+	char* str1;
 	
 	srand(time(NULL));
 	
@@ -762,11 +780,42 @@ int main(void) {
 	}
 	
 	// Stampo la lista
-	char* str1 = al_listToString(arr, stringifyMyStruct);
-	printf("%s\n", str1);
+	str1 = al_listToString(arr, stringifyMyStruct);
+	printf("(1)%s\n", str1);
 	free(str1);
 	
+	arraylist* clone = al_getElementsByCondition(arr, hasEvenNumber);
 	
+	// Stampo la lista
+	str1 = al_listToString(clone, stringifyMyStruct);
+	printf("(2)%s\n", str1);
+	free(str1);
+	
+	targa* tar = (targa*) al_extractElementAtPosition(arr, 1);
+	
+	tar->three_numbers = 000;
+	
+	
+	// Stampo la lista
+	str1 = al_listToString(arr, stringifyMyStruct);
+	printf("(1)%s\n", str1);
+	free(str1);
+	// Stampo la lista
+	str1 = al_listToString(clone, stringifyMyStruct);
+	printf("(2)%s\n", str1);
+	free(str1);
+	
+	// FREE
+	al_purgeList(arr);
+	al_cleanList(clone);
+		
+	return 0;
+}
+//////////////////////*/
+
+/* Testing Vario
+
+
 	// Ordino la lista
 	al_sortByOrder(arr, compareMyStruct);
 	printf("Ho ordinato la lista\n\n");
@@ -787,13 +836,5 @@ int main(void) {
 	char* str3 = al_listToString(arr, stringifyMyStruct);
 	printf("%s\n", str3);
 	free(str3);
-	
-	
-	// FREE
-	al_purgeList(arr);
-		
-	return 0;
-}
-//////////////////////*/
 
-
+ */
