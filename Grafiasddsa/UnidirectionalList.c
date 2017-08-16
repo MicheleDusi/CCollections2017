@@ -22,6 +22,8 @@
  * @author Michele Dusi <michele.dusi.it@ieee.org>
  * 
  */
+ 
+// Initializing List
 
 /** 
  * Inizializzazione della lista vuota. 
@@ -35,6 +37,82 @@ ulinked_list* ul_initList() {
 	new_list->head = NULL;
 	return new_list;
 }
+
+// Utility Private Functions
+
+/**
+ * Verifica l'ammissibilita di un indice come posizione di un elemento.
+ */
+static bool ul_checkPositionValidity(ulinked_list* l, int pos) {
+	return pos >= 0 && pos < l->size;
+}
+
+// Private Node Manipulation
+
+/**
+ * Restituisce l'ultimo elemento della lista.
+ */
+static ulinked_list_node* ul_getLastNode(ulinked_list* l) {
+	if (l->size == 0)
+		return NULL; // Caso in cui la lista sia vuota
+		
+	ulinked_list_node* iterator = l->head;
+	for (int i = 1; i < l->size; i++) {
+		iterator = iterator->next;
+	}
+	return iterator;
+}
+
+/**
+ * Restituisce l'elemento ad una data posizione.
+ * Se viene inserita una posizione superiore al numero di elementi presenti o un numero negativo, viene restituito NULL.
+ */
+static ulinked_list_node* ul_getNodeAtPosition(ulinked_list* l, int pos) {
+	if (ul_checkPositionValidity(l, pos)) {
+		ulinked_list_node* iterator = l->head;
+		for (int i = 0; i < pos && i < l->size; i++) {
+			iterator = iterator->next;
+		}
+		return iterator;
+	} else {
+		return NULL;
+	}
+}
+
+/**
+ * Estrae un elemento alla posizione desiderata, lo cancella dalla lista e lo restituisce come puntatore.
+ * Può restituire NULL se la posizione inserita non è valida.
+ */
+static ulinked_list_node* ul_extractNodeAtPosition(ulinked_list* l, int pos) {
+	if (!ul_checkPositionValidity(l, pos)) {
+		return NULL;
+	} else if (pos == 0) {
+		ulinked_list_node* aux = l->head;
+		l->head = l->head->next;
+		l->size--;
+		return aux;
+	} else {
+		ulinked_list_node* iterator = l->head;
+		for (int i = 0; i < pos - 1 && i < l->size - 1; i++) {
+			iterator = iterator->next;
+		}
+		ulinked_list_node* aux = iterator->next;
+		iterator->next = iterator->next->next;
+		l->size--;
+		return aux;
+	}
+}
+
+// Size
+
+/**
+ * Restituisce la quantità di elementi presenti nella lista.
+ */
+int ul_getListSize(ulinked_list* l) {
+	return l->size;
+}
+
+// Cancelling List
 
 /**
  * Elimina la lista passata come parametro, liberando le zone di memoria occupate
@@ -60,26 +138,7 @@ void ul_purgeList(ulinked_list* l) {
 	free(l);
 }
 
-/**
- * Verifica l'ammissibilita di un indice come posizione di un elemento.
- */
-static bool ul_checkPositionValidity(ulinked_list* l, int pos) {
-	return pos >= 0 && pos < l->size;
-}
-
-/**
- * Restituisce l'ultimo elemento della lista.
- */
-static ulinked_list_node* ul_getLastNode(ulinked_list* l) {
-	if (l->size == 0)
-		return NULL; // Caso in cui la lista sia vuota
-		
-	ulinked_list_node* iterator = l->head;
-	for (int i = 1; i < l->size; i++) {
-		iterator = iterator->next;
-	}
-	return iterator;
-}
+// Inserting Elements
 
 /** 
  * Inserimento di un elemento in testa alla lista.
@@ -154,6 +213,8 @@ void ul_insertAllElementsLast(ulinked_list* l, ulinked_list* elements) {
 	free(elements);
 }
 
+// Deleting Elements
+
 /**
  * Cancella il primo elemento della lista.
  * Il contenuto viene mantenuto in memoria e vi si può avere accesso tramite qualunque
@@ -165,21 +226,6 @@ void ul_deleteFirstElement(ulinked_list* l) {
 	} else {
 		ulinked_list_node* aux = l->head;
 		l->head = l->head->next;
-		free(aux);
-		l->size--;
-	}
-}
-
-/**
- * Cancella il primo elemento della lista, svuotandone dalla memoria il contenuto.
- */
-void ul_purgeFirstElement(ulinked_list* l) {
-	if (l->size == EMPTY_SIZE) {
-		EMPTY_SIZE_ERROR;
-	} else {
-		ulinked_list_node* aux = l->head;
-		l->head = l->head->next;
-		free(aux->data);
 		free(aux);
 		l->size--;
 	}
@@ -208,12 +254,11 @@ void ul_deleteLastElement(ulinked_list* l) {
 }
 
 /**
- * Cancella l'ultimo elemento della lista, rimuovendone
- * il contenuto dalla memoria. Dopo la chiamata a questa funzione, l'ultimo elemento
- * della lista non sarà più accessibile anche se sono presenti puntatori ad esso.
+ * Rimuove un elemento dalla lista alla posizione desiderata.
+ * Il contenuto di quell'elemento non viene eliminato dalla memoria.
  */
-void ul_purgeLastElement(ulinked_list* l) {
-	free(ul_extractElementAtPosition(l, l->size - 1));
+void ul_deleteElementAtPosition(ulinked_list* l, int pos) {
+	free(ul_extractNodeAtPosition(l, pos));
 }
 
 /**
@@ -243,66 +288,39 @@ void ul_deleteElementsByCondition(ulinked_list* l, bool (*condition)(void*)) {
 	}
 }
 
-/**
- * Restituisce il contenuto del primo elemento della lista.
- */
-void* ul_getFirstElement(ulinked_list* l) {
-	return l->head->data;
-}
+// Purging Elements
 
 /**
- * Restituisce il contenuto del primo elemento, rimuovendolo dalla lista.
+ * Cancella il primo elemento della lista, svuotandone dalla memoria il contenuto.
  */
-void* ul_extractFirstElement(ulinked_list* l) {
-	if (l->size != EMPTY_SIZE) {
+void ul_purgeFirstElement(ulinked_list* l) {
+	if (l->size == EMPTY_SIZE) {
+		EMPTY_SIZE_ERROR;
+	} else {
 		ulinked_list_node* aux = l->head;
-		void* content = aux->data;
 		l->head = l->head->next;
+		free(aux->data);
 		free(aux);
 		l->size--;
-		return content;
-	}
-	return NULL;
-}
-
-/**
- * Estrae un elemento alla posizione desiderata, lo cancella dalla lista e lo restituisce come puntatore.
- * Può restituire NULL se la posizione inserita non è valida.
- */
-static ulinked_list_node* ul_extractNodeAtPosition(ulinked_list* l, int pos) {
-	if (!ul_checkPositionValidity(l, pos)) {
-		return NULL;
-	} else if (pos == 0) {
-		ulinked_list_node* aux = l->head;
-		l->head = l->head->next;
-		l->size--;
-		return aux;
-	} else {
-		ulinked_list_node* iterator = l->head;
-		for (int i = 0; i < pos - 1 && i < l->size - 1; i++) {
-			iterator = iterator->next;
-		}
-		ulinked_list_node* aux = iterator->next;
-		iterator->next = iterator->next->next;
-		l->size--;
-		return aux;
 	}
 }
 
 /**
- * Estrae un elemento alla posizione desiderata, lo cancella dalla lista e lo restituisce come puntatore.
- * Il primo elemento della lista ha posizione "0".
+ * Cancella l'ultimo elemento della lista, rimuovendone
+ * il contenuto dalla memoria. Dopo la chiamata a questa funzione, l'ultimo elemento
+ * della lista non sarà più accessibile anche se sono presenti puntatori ad esso.
  */
-void* ul_extractElementAtPosition(ulinked_list* l, int pos) {
-	if (ul_checkPositionValidity(l, pos)) {
-		ulinked_list_node* extracted = ul_extractNodeAtPosition(l, pos);
-		void* aux = extracted->data;
-		free(extracted);
-		return aux;
-	} else {
-		UNVALID_POSITION_ERROR(pos);
-		return NULL;
-	}
+void ul_purgeLastElement(ulinked_list* l) {
+	free(ul_extractElementAtPosition(l, l->size - 1));
+}
+
+/**
+ * Rimuove un elemento dalla lista alla posizione desiderata, liberandone
+ * anche lo spazio occupato in memoria. Il contenuto, perciò, non sarà più raggiungibile
+ * una volta chiamata questa funzione.
+ */
+void ul_purgeElementAtPosition(ulinked_list* l, int pos) {
+	free(ul_extractElementAtPosition(l, pos));
 }
 
 /**
@@ -311,6 +329,32 @@ void* ul_extractElementAtPosition(ulinked_list* l, int pos) {
  */
 void ul_purgeElementsByCondition(ulinked_list* l, bool (*condition)(void*)) {
 	ul_purgeList(ul_extractElementsByCondition(l, condition));
+}
+
+// Getting Elements
+
+/**
+ * Restituisce il contenuto del primo elemento della lista.
+ */
+void* ul_getFirstElement(ulinked_list* l) {
+	return l->head->data;
+}
+
+/**
+ * Restituisce il contenuto dell'ultimo elemento della lista.
+ */
+void* ul_getLastElement(ulinked_list* l) {
+	if (l->size != EMPTY_SIZE) {
+		return ul_getLastNode(l)->data;
+	}
+	return NULL;
+}
+
+/**
+ * Restituisce il contentuto di un elemento alla posizione desiderata.
+ */
+void* ul_getElementAtPosition(ulinked_list* l, int pos) {
+	return ul_getNodeAtPosition(l, pos)->data;
 }
 
 /**
@@ -349,6 +393,79 @@ ulinked_list* ul_getElementsByCondition(ulinked_list* l, bool (*condition)(void*
 	free(iterator);
 	
 	return sublist;	
+}
+
+/**
+ * Restituisce la sottolista che parte dall'elemento di indice start_pos all'elemento di end_pos.
+ * L'elemento end_pos è <emph>escluso</emph>, mentre viene incluso l'elemento start_pos.
+ * 
+ * <i>NOTA:</i> Viene creata una nuova lista, ma non vengono clonati gli elementi (che pertanto rimangono quelli della lista originale
+ * e non subiscono modifiche).
+ * Un qualsiasi cambiamento alla lista originaria può provocare effetti collaterali alla sottolista, e viceversa.
+ * 
+ * <i>NOTA:</i>Si consiglia di non fare operazioni sugli estremi della sottolista. Questa funzione restituisce una lista
+ * comoda per operazioni di lettura o, al massimo, inserimento/rimozione <emph>al centro</emph> della sottolista.
+ */
+ulinked_list* ul_getSubList(ulinked_list* l, int start_pos, int end_pos) {
+	// Inizializzazione di una lista vuota
+	ulinked_list* sublist = malloc(sizeof(ulinked_list));
+	if (!sublist) {
+		MEMORY_ERROR;
+	}
+	// Controlli sulle posizioni
+	if (!ul_checkPositionValidity(l, start_pos)) {
+		UNVALID_POSITION_ERROR(start_pos);
+	} else if (!ul_checkPositionValidity(l, end_pos)) {
+		UNVALID_POSITION_ERROR(end_pos);
+	} else if (start_pos >= end_pos) {
+		UNVALID_POSITION_ERROR(end_pos);
+	} else {
+		// Linking della sotto-lista
+		sublist->size = end_pos - start_pos;
+		sublist->head = ul_getNodeAtPosition(l, start_pos);
+		return sublist;
+	}
+	return NULL;
+}
+
+// Extracting Elements
+
+/**
+ * Restituisce il contenuto del primo elemento, rimuovendolo dalla lista.
+ */
+void* ul_extractFirstElement(ulinked_list* l) {
+	if (l->size != EMPTY_SIZE) {
+		ulinked_list_node* aux = l->head;
+		void* content = aux->data;
+		l->head = l->head->next;
+		free(aux);
+		l->size--;
+		return content;
+	}
+	return NULL;
+}
+
+/**
+ * Estrae dalla lista l'ultimo elemento, e lo restituisce come valore di ritorno.
+ */
+void* ul_extractLastElement(ulinked_list* l) {
+	return ul_extractElementAtPosition(l, l->size - 1);
+}
+
+/**
+ * Estrae un elemento alla posizione desiderata, lo cancella dalla lista e lo restituisce come puntatore.
+ * Il primo elemento della lista ha posizione "0".
+ */
+void* ul_extractElementAtPosition(ulinked_list* l, int pos) {
+	if (ul_checkPositionValidity(l, pos)) {
+		ulinked_list_node* extracted = ul_extractNodeAtPosition(l, pos);
+		void* aux = extracted->data;
+		free(extracted);
+		return aux;
+	} else {
+		UNVALID_POSITION_ERROR(pos);
+		return NULL;
+	}
 }
 
 /** 
@@ -397,81 +514,7 @@ ulinked_list* ul_extractElementsByCondition(ulinked_list* l, bool (*condition)(v
 	return extracted_list;
 }
 
-/**
- * Rimuove un elemento dalla lista alla posizione desiderata.
- * Il contenuto di quell'elemento non viene eliminato dalla memoria.
- */
-void ul_deleteElementAtPosition(ulinked_list* l, int pos) {
-	free(ul_extractNodeAtPosition(l, pos));
-}
-
-/**
- * Rimuove un elemento dalla lista alla posizione desiderata, liberandone
- * anche lo spazio occupato in memoria. Il contenuto, perciò, non sarà più raggiungibile
- * una volta chiamata questa funzione.
- */
-void ul_purgeElementAtPosition(ulinked_list* l, int pos) {
-	free(ul_extractElementAtPosition(l, pos));
-}
-
-/**
- * Restituisce il contenuto dell'ultimo elemento della lista.
- */
-void* ul_getLastElement(ulinked_list* l) {
-	if (l->size != EMPTY_SIZE) {
-		return ul_getLastNode(l)->data;
-	}
-	return NULL;
-}
-
-void* ul_extractLastElement(ulinked_list* l) {
-	return ul_extractElementAtPosition(l, l->size - 1);
-}
-
-/**
- * Restituisce l'elemento ad una data posizione.
- * Se viene inserita una posizione superiore al numero di elementi presenti o un numero negativo, viene restituito NULL.
- */
-static ulinked_list_node* ul_getNodeAtPosition(ulinked_list* l, int pos) {
-	if (ul_checkPositionValidity(l, pos)) {
-		ulinked_list_node* iterator = l->head;
-		for (int i = 0; i < pos && i < l->size; i++) {
-			iterator = iterator->next;
-		}
-		return iterator;
-	} else {
-		return NULL;
-	}
-}
-
-/**
- * Restituisce il contentuto di un elemento alla posizione desiderata.
- */
-void* ul_getElementAtPosition(ulinked_list* l, int pos) {
-	return ul_getNodeAtPosition(l, pos)->data;
-}
-
-/**
- * Restituisce la quantità di elementi presenti nella lista.
- */
-int ul_getListSize(ulinked_list* l) {
-	return l->size;
-}
-
-/**
- * Restituisce la posizione dell'elemento corrispondente a quello cercato.
- * Se l'elemento non è presente all'interno della lista, viene restituito il valore -1.
- */
-int ul_getElementPosition(ulinked_list* l, void* element_content) {
-	ulinked_list_node* iterator = l->head;
-	for (int i = 0; i < l->size; i++) {
-		if (iterator->data == element_content) {
-			return i;
-		}
-		iterator = iterator->next;
-	}
-	return -1;
-}
+// Searching Elements
 
 /**
  * Verifica che all'interno della lista sia presente un elemento dato come parametro.
@@ -516,26 +559,21 @@ int ul_countElementsByCondition(ulinked_list* l, bool (*condition)(void*)) {
 }
 
 /**
- * Scambia di posto due elementi della lista, date le loro posizioni.
+ * Restituisce la posizione dell'elemento corrispondente a quello cercato.
+ * Se l'elemento non è presente all'interno della lista, viene restituito il valore -1.
  */
-void ul_swapTwoElements(ulinked_list* l, int pos1, int pos2) {
-	if (!ul_checkPositionValidity(l, pos1)) {
-		UNVALID_POSITION_ERROR(pos1);
-	} else if (!ul_checkPositionValidity(l, pos2)) {
-		UNVALID_POSITION_ERROR(pos2);
-	} else if (pos1 == pos2) {
-		// Dafuq?
-	} else {
-		if (pos1 > pos2) {
-			INT_SWAP(pos1, pos2);		// Mi assicuro che pos1 < pos2
+int ul_getElementPosition(ulinked_list* l, void* element_content) {
+	ulinked_list_node* iterator = l->head;
+	for (int i = 0; i < l->size; i++) {
+		if (iterator->data == element_content) {
+			return i;
 		}
-		// Scambio i due elementi
-		void* aux = ul_extractElementAtPosition(l, pos1);
-		ul_insertElementAtPosition(l, ul_extractElementAtPosition(l, pos2 - 1), pos1);
-		ul_insertElementAtPosition(l, aux, pos2);
-		// TODO Better version with linkers
+		iterator = iterator->next;
 	}
+	return -1;
 }
+
+// Cloning and Managing List
 
 /**
  * Clona una lista, data in ingresso una funzione per la clonazione del contenuto di un elemento.
@@ -603,6 +641,44 @@ ulinked_list* ul_cloneUnorderedList(ulinked_list* l, void* (*clone)(void*)) {
 }
 
 /**
+ * Restituisce una sottolista che parte dall'elemento di indice start_pos fino all'elemento di indice end_pos;
+ * La lista originale non viene modificata, e ogni singolo elemento viene clonato dalla funzione passata come parametro.
+ */
+ulinked_list* ul_cloneSubList(ulinked_list* l, int start_pos, int end_pos, void* (*clone)(void*)) {
+	// Inizializzazione di una lista vuota
+	ulinked_list* sublist = ul_initList();
+	// Controlli sulle posizioni
+	if (!ul_checkPositionValidity(l, start_pos)) {
+		UNVALID_POSITION_ERROR(start_pos);
+	} else if (!ul_checkPositionValidity(l, end_pos - 1)) {
+		UNVALID_POSITION_ERROR(end_pos);
+	} else if (start_pos >= end_pos) {
+		UNVALID_POSITION_ERROR(end_pos);
+	} else {
+		// Clonazione della sotto-lista
+		sublist->size = end_pos - start_pos - 1; // Alla fine ri-aggiungerò 1 quando inserirò la testa.
+		
+		ulinked_list_node* iterator_l = ul_getNodeAtPosition(l, start_pos);
+		ul_insertFirstElement(sublist, clone(iterator_l->data));
+		ulinked_list_node* iterator_sublist = sublist->head;
+		
+		for (int i = 1; i < sublist->size; i++) {
+			iterator_sublist->next = malloc(sizeof(ulinked_list_node)); // Creo un nuovo elemento successivo nella sottolista
+			iterator_sublist = iterator_sublist->next; // Ora l'iteratore sulla sottolista punta al nuovo elemento che sot creando.
+			if (!iterator_sublist) {
+				MEMORY_ERROR;
+			}
+			iterator_l = iterator_l->next;
+			iterator_sublist->data = clone(iterator_l->data);
+		}
+
+		iterator_sublist->next = NULL; // L'ultimo elemento della sottolista ha il successivo nullo.
+		return sublist;
+	}
+	return NULL;
+}
+
+/**
  * Unisce gli elementi di due liste in un'unica nuova lista.
  * Le liste originali <b>NON</b> vengono modificate.
  * E' possibile personalizzare il processo di clonazione attraverso la funzione <i>clone</i> passata come parametro.
@@ -611,6 +687,49 @@ ulinked_list* ul_concatenateTwoLists(ulinked_list* l1, ulinked_list* l2, void* (
 	ulinked_list* new_list = ul_cloneOrderedList(l1, clone);
 	ul_insertAllElementsLast(new_list, ul_cloneOrderedList(l2, clone));
 	return new_list;
+}
+
+// Sorting List
+
+/**
+ * Scambia di posto due elementi della lista, date le loro posizioni.
+ */
+void ul_swapTwoElements(ulinked_list* l, int pos1, int pos2) {
+	if (!ul_checkPositionValidity(l, pos1)) {
+		UNVALID_POSITION_ERROR(pos1);
+	} else if (!ul_checkPositionValidity(l, pos2)) {
+		UNVALID_POSITION_ERROR(pos2);
+	} else if (pos1 == pos2) {
+		// Dafuq?
+	} else {
+		if (pos1 > pos2) {
+			INT_SWAP(pos1, pos2);		// Mi assicuro che pos1 < pos2
+		}
+		// Scambio i due elementi
+		void* aux = ul_extractElementAtPosition(l, pos1);
+		ul_insertElementAtPosition(l, ul_extractElementAtPosition(l, pos2 - 1), pos1);
+		ul_insertElementAtPosition(l, aux, pos2);
+		// TODO Better version with linkers
+	}
+}
+
+/**
+ * Ordina una lista in modo <i>crescente</i> secondo una relazione d'ordine definita dall'utente e passata come parametro.
+ * La relazione deve essere implementata come una funzione che prende in ingresso il contenuto di due nodi, 
+ * e li confronta restituendo:
+ * - un numero negativo se il primo dato è "minore" del secondo (stando alla relazione).
+ * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
+ * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
+ */
+void ul_sortByOrder(ulinked_list* l, int (*compare)(void*, void*)) {
+	// Implementazione di un Bubble Sort per l'ordinamento della lista
+	for (int i = 0; i < l->size; i++) {
+		for (int j = l->size - 1; j > i; j--) {
+			if (compare(ul_getElementAtPosition(l, j), ul_getElementAtPosition(l, j - 1)) < 0) {
+				ul_swapTwoElements(l, j, j - 1);
+			}
+		}
+	}
 }
 
 /**
@@ -681,95 +800,7 @@ void* ul_getMaximumElement(ulinked_list* l, int (*compare)(void*, void*)) {
 	return ul_getMaximumNode(l, compare)->data;
 }
 
-/**
- * Restituisce la sottolista che parte dall'elemento di indice start_pos all'elemento di end_pos.
- * L'elemento end_pos è <emph>escluso</emph>, mentre viene incluso l'elemento start_pos.
- * 
- * <i>NOTA:</i> Viene creata una nuova lista, ma non vengono clonati gli elementi (che pertanto rimangono quelli della lista originale
- * e non subiscono modifiche).
- * Un qualsiasi cambiamento alla lista originaria può provocare effetti collaterali alla sottolista, e viceversa.
- * 
- * <i>NOTA:</i>Si consiglia di non fare operazioni sugli estremi della sottolista. Questa funzione restituisce una lista
- * comoda per operazioni di lettura o, al massimo, inserimento/rimozione <emph>al centro</emph> della sottolista.
- */
-ulinked_list* ul_getSubList(ulinked_list* l, int start_pos, int end_pos) {
-	// Inizializzazione di una lista vuota
-	ulinked_list* sublist = malloc(sizeof(ulinked_list));
-	if (!sublist) {
-		MEMORY_ERROR;
-	}
-	// Controlli sulle posizioni
-	if (!ul_checkPositionValidity(l, start_pos)) {
-		UNVALID_POSITION_ERROR(start_pos);
-	} else if (!ul_checkPositionValidity(l, end_pos)) {
-		UNVALID_POSITION_ERROR(end_pos);
-	} else if (start_pos >= end_pos) {
-		UNVALID_POSITION_ERROR(end_pos);
-	} else {
-		// Linking della sotto-lista
-		sublist->size = end_pos - start_pos;
-		sublist->head = ul_getNodeAtPosition(l, start_pos);
-		return sublist;
-	}
-	return NULL;
-}
-
-/**
- * Restituisce una sottolista che parte dall'elemento di indice start_pos fino all'elemento di indice end_pos;
- * La lista originale non viene modificata, e ogni singolo elemento viene clonato dalla funzione passata come parametro.
- */
-ulinked_list* ul_cloneSubList(ulinked_list* l, int start_pos, int end_pos, void* (*clone)(void*)) {
-	// Inizializzazione di una lista vuota
-	ulinked_list* sublist = ul_initList();
-	// Controlli sulle posizioni
-	if (!ul_checkPositionValidity(l, start_pos)) {
-		UNVALID_POSITION_ERROR(start_pos);
-	} else if (!ul_checkPositionValidity(l, end_pos - 1)) {
-		UNVALID_POSITION_ERROR(end_pos);
-	} else if (start_pos >= end_pos) {
-		UNVALID_POSITION_ERROR(end_pos);
-	} else {
-		// Clonazione della sotto-lista
-		sublist->size = end_pos - start_pos - 1; // Alla fine ri-aggiungerò 1 quando inserirò la testa.
-		
-		ulinked_list_node* iterator_l = ul_getNodeAtPosition(l, start_pos);
-		ul_insertFirstElement(sublist, clone(iterator_l->data));
-		ulinked_list_node* iterator_sublist = sublist->head;
-		
-		for (int i = 1; i < sublist->size; i++) {
-			iterator_sublist->next = malloc(sizeof(ulinked_list_node)); // Creo un nuovo elemento successivo nella sottolista
-			iterator_sublist = iterator_sublist->next; // Ora l'iteratore sulla sottolista punta al nuovo elemento che sot creando.
-			if (!iterator_sublist) {
-				MEMORY_ERROR;
-			}
-			iterator_l = iterator_l->next;
-			iterator_sublist->data = clone(iterator_l->data);
-		}
-
-		iterator_sublist->next = NULL; // L'ultimo elemento della sottolista ha il successivo nullo.
-		return sublist;
-	}
-	return NULL;
-}
-
-/**
- * Ordina una lista in modo <i>crescente</i> secondo una relazione d'ordine definita dall'utente e passata come parametro.
- * La relazione deve essere implementata come una funzione che prende in ingresso il contenuto di due nodi, 
- * e li confronta restituendo:
- * - un numero negativo se il primo dato è "minore" del secondo (stando alla relazione).
- * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
- * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
- */
-void ul_sortByOrder(ulinked_list* l, int (*compare)(void*, void*)) {
-	// Implementazione di un Bubble Sort per l'ordinamento della lista
-	for (int i = 0; i < l->size; i++) {
-		for (int j = l->size - 1; j > i; j--) {
-			if (compare(ul_getElementAtPosition(l, j), ul_getElementAtPosition(l, j - 1)) < 0) {
-				ul_swapTwoElements(l, j, j - 1);
-			}
-		}
-	}
-}
+// Visualizing List
 
 /**
  * Restituisce una stringa che rappresenta gli elementi contenuti all'interno della lista.
@@ -800,7 +831,7 @@ char* ul_listToString(ulinked_list* l, char* (*toStringFunction)(void*)) {
 	return s;
 }
 
-//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // TESTING //
 
 
