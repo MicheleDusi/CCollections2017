@@ -52,21 +52,21 @@ void* al_extractElementAtPosition(arraylist* l, int pos); // OK
 arraylist* al_extractElementsByCondition(arraylist* l, bool (*condition)(void*)); // OK
 
 // Searching Elements
-bool al_containsElement(arraylist* l, void* element_content);
-bool al_containsElementByCondition(arraylist* l, bool (*condition)(void*));
-int al_countElementsByCondition(arraylist* l, bool (*condition)(void*));
-int al_getElementPosition(arraylist* l, void* element_content);
+bool al_containsElement(arraylist* l, void* element_content); // OK
+bool al_containsElementByCondition(arraylist* l, bool (*condition)(void*)); // OK
+int al_countElementsByCondition(arraylist* l, bool (*condition)(void*)); // OK
+int al_getElementPosition(arraylist* l, void* element_content); // OK
 
 // Cloning and Managing List
-arraylist* al_cloneOrderedList(arraylist* l, void* (*clone)(void*));
-arraylist* al_cloneSubList(arraylist* l, int start_pos, int end_pos, void* (*clone)(void*));
+arraylist* al_cloneOrderedList(arraylist* l, void* (*clone)(void*)); // OK
+arraylist* al_cloneSubList(arraylist* l, int start_pos, int end_pos, void* (*clone)(void*)); // OK
 arraylist* al_concatenateTwoLists(arraylist* l1, arraylist* l2, void* (*clone)(void*)); // OK
 
 // Sorting List
-void al_swapTwoElements(arraylist* l, int pos1, int pos2);
+void al_swapTwoElements(arraylist* l, int pos1, int pos2); // OK
 void al_sortByOrder(arraylist* l, int (*compare)(void*, void*)); // OK
-void* al_getMinimumContent(arraylist* l, int (*compare)(void*, void*));
-void* al_getMaximumContent(arraylist* l, int (*compare)(void*, void*));
+void* al_getMinimumContent(arraylist* l, int (*compare)(void*, void*)); // OK
+void* al_getMaximumContent(arraylist* l, int (*compare)(void*, void*)); // OK
 
 // Visualizing List
 char* al_listToString(arraylist* l, char* (*toStringFunction)(void*)); // OK

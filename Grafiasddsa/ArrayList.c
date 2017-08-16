@@ -390,7 +390,7 @@ arraylist* al_getElementsByCondition(arraylist* l, bool (*condition)(void*)) {
 arraylist* al_getSubList(arraylist* l, int start_pos, int end_pos) {
 	if (!al_checkPositionValidity(l, start_pos)) {
 		UNVALID_POSITION_ERROR(start_pos);
-	} else if (!al_checkPositionValidity(l, end_pos)) {
+	} else if (!al_checkPositionValidity(l, end_pos - 1)) {
 		UNVALID_POSITION_ERROR(end_pos);
 	} else if (end_pos <= start_pos) {
 		UNVALID_POSITION_ERROR(end_pos);
@@ -548,7 +548,10 @@ arraylist* al_cloneOrderedList(arraylist* l, void* (*clone)(void*)) {
  * La lista originale non viene modificata, e ogni singolo elemento viene clonato dalla funzione passata come parametro.
  */
 arraylist* al_cloneSubList(arraylist* l, int start_pos, int end_pos, void* (*clone)(void*)) {
-	return al_cloneOrderedList(al_getSubList(l, start_pos, end_pos), clone);
+	arraylist* sublist = al_getSubList(l, start_pos, end_pos); // GetSublist alloca in memoria una nuova lista. Per questo devo associarci un puntatore, per poterla liberare poco sotto.
+	arraylist* cloned_sublist = al_cloneOrderedList(sublist, clone);
+	free(sublist);
+	return cloned_sublist;
 }
 
 /**
@@ -585,14 +588,9 @@ void al_swapTwoElements(arraylist* l, int pos1, int pos2) {
 	} else if (pos1 >= pos2) {
 		UNVALID_POSITION_ERROR(pos2);
 	} else {
-		void* aux = malloc(sizeof(void*));
-		if (!aux) {
-			MEMORY_ERROR;
-		}
-		aux = l->array[pos1];
+		void* aux = l->array[pos1];
 		l->array[pos1] = l->array[pos2];
 		l->array[pos2] = aux;
-		free(aux);
 	}
 }
 
@@ -777,37 +775,21 @@ int main(void) {
 	// Popolo la lista
 	for (int i = 0; i < dim; i++) {
 		al_insertLastElement(arr, initRandomTarga());
-	}
-	
+	}	
+
 	// Stampo la lista
 	str1 = al_listToString(arr, stringifyMyStruct);
 	printf("(1)%s\n", str1);
 	free(str1);
 	
-	arraylist* clone = al_getElementsByCondition(arr, hasEvenNumber);
+	targa* aux = al_getMinimumContent(arr, compareMyStruct);
 	
-	// Stampo la lista
-	str1 = al_listToString(clone, stringifyMyStruct);
-	printf("(2)%s\n", str1);
-	free(str1);
-	
-	targa* tar = (targa*) al_extractElementAtPosition(arr, 1);
-	
-	tar->three_numbers = 000;
-	
-	
-	// Stampo la lista
-	str1 = al_listToString(arr, stringifyMyStruct);
-	printf("(1)%s\n", str1);
-	free(str1);
-	// Stampo la lista
-	str1 = al_listToString(clone, stringifyMyStruct);
-	printf("(2)%s\n", str1);
+	str1 = stringifyMyStruct(aux);
+	printf("Elemento estremo: %s\n", str1);
 	free(str1);
 	
 	// FREE
 	al_purgeList(arr);
-	al_cleanList(clone);
 		
 	return 0;
 }
@@ -836,5 +818,20 @@ int main(void) {
 	char* str3 = al_listToString(arr, stringifyMyStruct);
 	printf("%s\n", str3);
 	free(str3);
+	
+* 
+	 
+	// Stampo la lista
+	str1 = al_listToString(arr, stringifyMyStruct);
+	printf("(1)%s\n", str1);
+	free(str1);
+	
+	targa* randomico = initRandomTarga();
+	al_insertElementAtPosition(arr, randomico, rand() % dim);
+	
+	
+	printf("L'elemento casuale è alla posizione %d \n\n", al_getElementPosition(arr, randomico));
+	
+*
 
  */
