@@ -82,7 +82,7 @@ int al_getListSize(arraylist* l) {
  * dalla struttura ArrayList e dal vettore interno.
  * <b>NON</b> elimina gli oggetti a cui i puntatori nel vettore puntano.
  */
-void al_cleanList(arraylist* l) {
+void al_deleteList(arraylist* l) {
 	free(l->array);
 	free(l);
 }

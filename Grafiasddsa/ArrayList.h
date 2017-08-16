@@ -17,7 +17,7 @@ arraylist* al_initList(); // OK
 int al_getListSize(arraylist* l); // OK
 
 // Cancelling List
-void al_cleanList(arraylist* l); // OK
+void al_deleteList(arraylist* l); // OK
 void al_purgeList(arraylist* l); // OK
 
 // Inserting Elements
