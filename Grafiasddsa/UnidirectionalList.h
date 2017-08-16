@@ -31,7 +31,7 @@ ulinked_list* ul_initList(); // OK
 int ul_getListSize(ulinked_list* l); // OK
 
 // Cancelling List
-void ul_cleanList(ulinked_list* l); // OK
+void ul_deleteList(ulinked_list* l); // OK
 void ul_purgeList(ulinked_list* l); // OK
 
 // Inserting Elements

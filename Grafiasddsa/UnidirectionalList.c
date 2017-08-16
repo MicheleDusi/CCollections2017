@@ -119,7 +119,7 @@ int ul_getListSize(ulinked_list* l) {
  * dalla struttura UnidirectionalLinkedList e dai nodi.
  * <b>NON</b> elimina gli oggetti a cui i puntatori nella lista puntano.
  */
-void ul_cleanList(ulinked_list* l) {
+void ul_deleteList(ulinked_list* l) {
 	while (l->size != EMPTY_SIZE) {
 		ul_deleteFirstElement(l);
 	}
@@ -360,7 +360,7 @@ void* ul_getElementAtPosition(ulinked_list* l, int pos) {
 /**
  * Restituisce una sotto-lista con tutti gli elementi che soddisfano una data condizione.
  * Gli elementi sono esattamente gli stessi (i puntatori puntano agli stessi elementi della lista originale),
- * ma la "struct" lista è differente: sarà perciò sufficiente pulirla con il metodo "ul_cleanList" al termine del suo utilizzo.
+ * ma la "struct" lista è differente: sarà perciò sufficiente pulirla con il metodo "ul_deleteList" al termine del suo utilizzo.
  */
 ulinked_list* ul_getElementsByCondition(ulinked_list* l, bool (*condition)(void*)) {
 	ulinked_list* sublist = ul_initList();
