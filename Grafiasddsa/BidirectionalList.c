@@ -362,7 +362,7 @@ void bl_deleteElementsByCondition(blinked_list* l, bool (*condition)(void*)) {
 	if (condition(l->head->data)) {
 		bl_deleteFirstElement(l);
 	}
-	if (condition(l->tail->data) {
+	if (condition(l->tail->data)) {
 		bl_deleteLastElement(l);
 	}
 }
@@ -400,7 +400,7 @@ void bl_purgeLastElement(blinked_list* l) {
 		EMPTY_SIZE_ERROR;
 	} else if (l->size == 1) {
 		free(l->tail->data);
-		free(l>-tail);
+		free(l->tail);
 		l->head = NULL;
 		l->tail = NULL;
 		l->size--;
@@ -461,8 +461,6 @@ void* bl_getElementAtPosition(blinked_list* l, int pos) {
 	return bl_getNodeAtPosition(l, pos)->data;
 }
 
-///////////////////////////////// FINO A QUI
-
 /**
  * Restituisce una sotto-lista con tutti gli elementi che soddisfano una data condizione.
  * Gli elementi sono esattamente gli stessi (i puntatori puntano agli stessi elementi della lista originale),
@@ -471,33 +469,14 @@ void* bl_getElementAtPosition(blinked_list* l, int pos) {
 blinked_list* bl_getElementsByCondition(blinked_list* l, bool (*condition)(void*)) {
 	blinked_list* sublist = bl_initList();
 	blinked_list_node* iterator = l->head;
-	// Creo un "nodo fake" per accelerare le operazioni di aggiunta in coda
-	blinked_list_node* last_taken = malloc(sizeof(blinked_list_node));
-	if (!last_taken) {
-		MEMORY_ERROR;
-	}
-	sublist->head = last_taken;
 	// Ciclo su tutta la lista originale
 	for (int i = 0; i < l->size; i++) {
 		// Se un elemento soddisfa la condizione
 		if (condition(iterator->data)) {
-			// Creo un nuovo nodo nella sottolista
-			last_taken->next = malloc(sizeof(blinked_list_node));
-			if (!(last_taken->next)) {
-				MEMORY_ERROR;
-			}
-			last_taken = last_taken->next;
-			last_taken->data = iterator->data;
-			sublist->size++;
+			bl_insertLastElement(sublist, iterator->data); // Inserisco l'elemento in coda
 		}
 		iterator = iterator->next;
-	}
-	last_taken->next = NULL;
-	// Rimuovo il nodo fake ausiliario
-	iterator = sublist->head;
-	sublist->head = sublist->head->next;
-	free(iterator);
-	
+	}	
 	return sublist;	
 }
 
@@ -513,11 +492,6 @@ blinked_list* bl_getElementsByCondition(blinked_list* l, bool (*condition)(void*
  * comoda per operazioni di lettura o, al massimo, inserimento/rimozione <emph>al centro</emph> della sottolista.
  */
 blinked_list* bl_getSubList(blinked_list* l, int start_pos, int end_pos) {
-	// Inizializzazione di una lista vuota
-	blinked_list* sublist = malloc(sizeof(blinked_list));
-	if (!sublist) {
-		MEMORY_ERROR;
-	}
 	// Controlli sulle posizioni
 	if (!bl_checkPositionValidity(l, start_pos)) {
 		UNVALID_POSITION_ERROR(start_pos);
@@ -526,9 +500,18 @@ blinked_list* bl_getSubList(blinked_list* l, int start_pos, int end_pos) {
 	} else if (start_pos >= end_pos) {
 		UNVALID_POSITION_ERROR(end_pos);
 	} else {
+		// Inizializzazione di una lista vuota
+		blinked_list* sublist = malloc(sizeof(blinked_list));
+		if (!sublist) {
+			MEMORY_ERROR;
+		}
 		// Linking della sotto-lista
 		sublist->size = end_pos - start_pos;
 		sublist->head = bl_getNodeAtPosition(l, start_pos);
+		sublist->tail = sublist->head;
+		for (int i = 1; i < sublist->size; i++) {
+			sublist->tail = sublist->tail->next;
+		}
 		return sublist;
 	}
 	return NULL;
@@ -540,22 +523,48 @@ blinked_list* bl_getSubList(blinked_list* l, int start_pos, int end_pos) {
  * Restituisce il contenuto del primo elemento, rimuovendolo dalla lista.
  */
 void* bl_extractFirstElement(blinked_list* l) {
-	if (l->size != EMPTY_SIZE) {
-		blinked_list_node* aux = l->head;
-		void* content = aux->data;
-		l->head = l->head->next;
-		free(aux);
+	if (l->size == EMPTY_SIZE) { // Lista vuota
+		EMPTY_SIZE_ERROR;
+		return NULL;
+	} else if (l->size == 1) { // Lista con un singolo elemento
+		void* aux = l->head->data;
+		free(l->head);
+		l->head = NULL;
+		l->tail = NULL;
 		l->size--;
-		return content;
+		return aux;
+	} else {					// Lista con almeno due elementi
+		void* aux = l->head->data;
+		l->head = l->head->next;
+		free(l->head->prev);
+		l->head->prev = NULL;
+		l->size--;
+		return aux;
 	}
-	return NULL;
 }
 
 /**
  * Estrae dalla lista l'ultimo elemento, e lo restituisce come valore di ritorno.
  */
 void* bl_extractLastElement(blinked_list* l) {
-	return bl_extractElementAtPosition(l, l->size - 1);
+	if (l->size == EMPTY_SIZE) { // Lista vuota
+		EMPTY_SIZE_ERROR;
+		return NULL;
+	} else if (l->size == 1) {	// Lista con un singolo elemento
+		void* aux = l->tail->data;
+		free(l->tail);
+		l->tail = NULL;
+		l->head = NULL;
+		l->size--;
+		return aux;
+	} else {					// Lista con almeno due elementi
+		void* aux = l->tail->data;
+		l->tail = l->tail->prev;
+		free(l->tail->next);
+		l->tail->next = NULL;
+		l->size--;
+		return aux;
+	}
 }
 
 /**
@@ -563,14 +572,13 @@ void* bl_extractLastElement(blinked_list* l) {
  * Il primo elemento della lista ha posizione "0".
  */
 void* bl_extractElementAtPosition(blinked_list* l, int pos) {
-	if (bl_checkPositionValidity(l, pos)) {
-		blinked_list_node* extracted = bl_extractNodeAtPosition(l, pos);
+	blinked_list_node* extracted = bl_extractNodeAtPosition(l, pos);
+	if (extracted == NULL) {
+		return NULL;
+	} else {
 		void* aux = extracted->data;
 		free(extracted);
 		return aux;
-	} else {
-		UNVALID_POSITION_ERROR(pos);
-		return NULL;
 	}
 }
 
@@ -582,41 +590,32 @@ void* bl_extractElementAtPosition(blinked_list* l, int pos) {
  */
 blinked_list* bl_extractElementsByCondition(blinked_list* l, bool (*condition)(void*)) {
 	blinked_list* extracted_list = bl_initList();
+	bl_insertInitialElement(extracted_list, NULL); // NODO FAKE per agevolare le operazioni
+	// Ciclo su tutti gli elementi NON estremi
 	blinked_list_node* iterator = l->head;
-	// Creo un "nodo fake" per accelerare le operazioni di aggiunta in coda
-	bl_insertFirstElement(extracted_list, NULL);
-	blinked_list_node* last_extracted = extracted_list->head;
-	
-	// Ciclo su tutti gli elementi (tranne che per la testa)
-	for (int i = 0; i < l->size; i++) {
-		// L'iterator si ferma sempre un passo prima dell'elemento da estrarre
+	for (int i = 1; i < l->size - 1; i++) {
 		if (condition(iterator->next->data)) {
-			// Ho trovato un elemento da estrarre, aggiorno i collegamenti
-			last_extracted->next = iterator->next;
+			extracted_list->tail->next = iterator->next;
 			iterator->next = iterator->next->next;
-			last_extracted = last_extracted->next;
-			l->size--;
+			iterator->next->prev = iterator;
+			extracted_list->tail->next->prev = extracted_list->tail;
+			extracted_list->tail = extracted_list->tail->next;
 			extracted_list->size++;
+			l->size--;
 		} else {
-			// Altrimenti passo al successivo
 			iterator = iterator->next;
 		}
 	}
-	
-	// Rimuovo il nodo "fake" precedentemente creato.
-	bl_purgeFirstElement(extracted_list);
-	
-	// Per ultima controllo le testa, che ha bisogno di aggiornamenti specifici sui puntatori
+	// Rimuovo il nodo fake
+	bl_deleteFirstElement(extracted_list);
+	// Controllo testa e coda
 	if (condition(l->head->data)) {
-		// Se la condizione è soddisfatta, sposto la testa della lista originaria nella lista degli elementi estratti.
-		last_extracted = extracted_list->head;
-		extracted_list->head = l->head;
-		l->head = l->head->next;
-		extracted_list->head->next = last_extracted;
-		
-		l->size--;
-		extracted_list->size++;
+		bl_insertFirstElement(extracted_list, bl_extractFirstElement(l));
 	}
+	if (condition(l->tail->data)) {
+		bl_insertLastElement(extracted_list, bl_extractLastElement(l));
+	}
+	// Ritorno
 	return extracted_list;
 }
 
@@ -624,6 +623,8 @@ blinked_list* bl_extractElementsByCondition(blinked_list* l, bool (*condition)(v
 
 /**
  * Verifica che all'interno della lista sia presente un elemento dato come parametro.
+ * Poiché non si hanno elementi per sapere se l'elemento ha più probabilità di trovarsi in testa o in coda, 
+ * viene scelto arbitrariamente di scorrere la lista a partire dalla testa.
  */
 bool bl_containsElement(blinked_list* l, void* element_content) {
 	blinked_list_node* iterator = l->head;
@@ -642,8 +643,9 @@ bool bl_containsElement(blinked_list* l, void* element_content) {
 bool bl_containsElementByCondition(blinked_list* l, bool (*condition)(void*)) {
 	blinked_list_node* iterator = l->head;
 	for (int i = 0; i < l->size; i++) {
-		if (condition(iterator->data))
+		if (condition(iterator->data)) {
 			return true;
+		}
 		iterator = iterator->next;
 	}
 	return false;
@@ -688,61 +690,15 @@ int bl_getElementPosition(blinked_list* l, void* element_content) {
 blinked_list* bl_cloneOrderedList(blinked_list* l, void* (*clone)(void*)) {
 	// Inizializzo la nuova lista
 	blinked_list* new_list = bl_initList();
-	// Inizio la clonazione
-	blinked_list_node* aux;
-	// Clono la testa
-	if (l->size) {
-		aux = malloc(sizeof(blinked_list_node));
-		if (!aux) {
-			MEMORY_ERROR;
+	// Clono la lista
+	if (l->size != EMPTY_SIZE) {
+		blinked_list_node* iterator = l->head;
+		for (int i = 0; i < l->size; i++) {
+			bl_insertLastElement(new_list, clone(iterator->data));
+			iterator = iterator->next;
 		}
-		aux->data = clone(bl_getFirstElement(l));
-		aux->next = NULL;
-		new_list->head = aux;
-		new_list->size++;
 	}
-	// Clono il resto
-	blinked_list_node* iterator = l->head->next;			// Utilizzo un secondo iteratore (il primo in realtà è aux) per evitare di ciclare sulle liste più di una volta.
-	blinked_list_node* new_element;
-	for (int i = 1; i < l->size; i++) {
-		new_element = malloc(sizeof(blinked_list_node));
-		if (!new_element) {
-			MEMORY_ERROR;
-		}
-		new_element->data = clone(iterator->data);
-		// Aggiorno i puntatori/iteratori
-		aux->next = new_element;			// Aux tiene in memoria il penultimo elemento aggiunto alla nuova lista
-		aux = aux->next;
-		iterator = iterator->next;
-		new_list->size++;
-	}
-	new_element->next = NULL; // Coda
 	// Fine
-	return new_list;
-}
-
-/**
- * Clona una lista, data in ingresso una funzione per la clonazione del contenuto di un elemento.
- * Non garantisce il mantenimento dell'ordine durante il processo, ma permette una maggiore velocità (FORSE). // TODO CONTROLLARE
- * In particolare, a fine esecuzione la lista ottenuta avrà ordine inverso.
- * 
- * @deprecated Use cloneOrderedList instead.
- */
-blinked_list* bl_cloneUnorderedList(blinked_list* l, void* (*clone)(void*)) {
-	// Inizializzo la nuova lista
-	blinked_list* new_list = malloc(sizeof(blinked_list));
-	if (!new_list) {
-		MEMORY_ERROR;
-	}
-	new_list->size = 0;
-	new_list->head = NULL;
-	// Clono gli elementi della lista originaria
-	blinked_list_node* iterator = l->head;
-	for (int i = 0; i < l->size; i++) {
-		bl_insertFirstElement(new_list, clone(iterator->data));
-		iterator = iterator->next;
-	}
-	// Restituisco la lista creata
 	return new_list;
 }
 
@@ -751,8 +707,6 @@ blinked_list* bl_cloneUnorderedList(blinked_list* l, void* (*clone)(void*)) {
  * La lista originale non viene modificata, e ogni singolo elemento viene clonato dalla funzione passata come parametro.
  */
 blinked_list* bl_cloneSubList(blinked_list* l, int start_pos, int end_pos, void* (*clone)(void*)) {
-	// Inizializzazione di una lista vuota
-	blinked_list* sublist = bl_initList();
 	// Controlli sulle posizioni
 	if (!bl_checkPositionValidity(l, start_pos)) {
 		UNVALID_POSITION_ERROR(start_pos);
@@ -761,24 +715,14 @@ blinked_list* bl_cloneSubList(blinked_list* l, int start_pos, int end_pos, void*
 	} else if (start_pos >= end_pos) {
 		UNVALID_POSITION_ERROR(end_pos);
 	} else {
+		// Inizializzazione di una lista vuota
+		blinked_list* sublist = bl_initList();
 		// Clonazione della sotto-lista
-		sublist->size = end_pos - start_pos - 1; // Alla fine ri-aggiungerò 1 quando inserirò la testa.
-		
-		blinked_list_node* iterator_l = bl_getNodeAtPosition(l, start_pos);
-		bl_insertFirstElement(sublist, clone(iterator_l->data));
-		blinked_list_node* iterator_sublist = sublist->head;
-		
-		for (int i = 1; i < sublist->size; i++) {
-			iterator_sublist->next = malloc(sizeof(blinked_list_node)); // Creo un nuovo elemento successivo nella sottolista
-			iterator_sublist = iterator_sublist->next; // Ora l'iteratore sulla sottolista punta al nuovo elemento che sot creando.
-			if (!iterator_sublist) {
-				MEMORY_ERROR;
-			}
-			iterator_l = iterator_l->next;
-			iterator_sublist->data = clone(iterator_l->data);
+		blinked_list_node* iterator = bl_getNodeAtPosition(l, start_pos);
+		for (int i = start_pos; i < end_pos; i++) {
+			bl_insertLastElement(sublist, clone(iterator->data));
+			iterator = iterator->next;
 		}
-
-		iterator_sublist->next = NULL; // L'ultimo elemento della sottolista ha il successivo nullo.
 		return sublist;
 	}
 	return NULL;
@@ -806,16 +750,42 @@ void bl_swapTwoElements(blinked_list* l, int pos1, int pos2) {
 	} else if (!bl_checkPositionValidity(l, pos2)) {
 		UNVALID_POSITION_ERROR(pos2);
 	} else if (pos1 == pos2) {
-		// Dafuq?
+		UNVALID_POSITION_ERROR(pos2);
 	} else {
 		if (pos1 > pos2) {
 			INT_SWAP(pos1, pos2);		// Mi assicuro che pos1 < pos2
 		}
-		// Scambio i due elementi
-		void* aux = bl_extractElementAtPosition(l, pos1);
-		bl_insertElementAtPosition(l, bl_extractElementAtPosition(l, pos2 - 1), pos1);
-		bl_insertElementAtPosition(l, aux, pos2);
-		// TODO Better version with linkers
+		/// TODO: implementazione con lo scorrimento con direzione dipendente dalla posizione
+		blinked_list_node* aux1 = l->head; // Punterà al primo elemento da scambiare
+		for (int i = 0; i < pos1; i++) {
+			aux1 = aux1->next;
+		}
+		blinked_list_node* aux2 = aux1; // Punterà al secondo elemento da scambiare
+		for (int i = pos1; i < pos2; i++) {
+			aux2 = aux2->next;
+		}
+		
+		if (pos1 == 0) {
+			l->head = aux2;
+		} else {
+			aux1->prev->next = aux2;
+		}
+		aux1->next->prev = aux2;
+		
+		if (pos2 == l->size - 1) {
+			l->tail = aux1;
+		} else {
+			aux2->next->prev = aux1;
+		}
+		aux2->prev->next = aux1;
+		
+		blinked_list_node* p_aux;
+		p_aux = aux1->next;
+		aux1->next = aux2->next;
+		aux2->next = p_aux;
+		p_aux = aux1->prev;
+		aux1->prev = aux2->prev;
+		aux2->prev = p_aux;
 	}
 }
 
@@ -848,8 +818,8 @@ void bl_sortByOrder(blinked_list* l, int (*compare)(void*, void*)) {
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
 static blinked_list_node* bl_getMinimumNode(blinked_list* l, int (*compare)(void*, void*)) {
-	blinked_list_node* iterator = l->head->next;
 	blinked_list_node* minimum = l->head;
+	blinked_list_node* iterator = l->head->next;
 	for (int i = 1; i < l->size; i++) {
 		if (compare(iterator->data, minimum->data) < 0) {
 			minimum = iterator;
@@ -882,8 +852,8 @@ void* bl_getMinimumElement(blinked_list* l, int (*compare)(void*, void*)) {
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
  */
 static blinked_list_node* bl_getMaximumNode(blinked_list* l, int (*compare)(void*, void*)) {
-	blinked_list_node* iterator = l->head->next;
 	blinked_list_node* maximum = l->head;
+	blinked_list_node* iterator = l->head->next;
 	for (int i = 1; i < l->size; i++) {
 		if (compare(iterator->data, maximum->data) > 0) {
 			maximum = iterator;
