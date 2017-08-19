@@ -278,17 +278,25 @@ void bl_insertElementAtPosition(blinked_list* l, void* new_element_data, int pos
 }
 
 /**
- * Inserisce tutti gli elementi in coda alla prima lista.
- * Gli elementi da aggiungere vengono passati come "blinked_list*".
- * L'utilizzo di questa funzione provoca la cancellazione della seconda lista, pertanto è
- * sconsigliata se si vuole unire due liste differenti. In sostituzione, è possibile utilizzare
- * la funzione "bl_concatenateTwoLists" che ricopia le liste in questione senza modificare gli originali.
+ * Inserisce tutti gli elementi in coda alla prima lista. Gli elementi da aggiungere vengono passati come "blinked_list*".
+ * 
+ * <i>NOTA:</i> L'utilizzo di questa funzione provoca la cancellazione della seconda lista, pertanto è
+ * sconsigliata se si vuole unire due liste differenti mantenendo le liste di partenza in memoria.
+ * In sostituzione, è possibile utilizzare la funzione "bl_concatenateTwoLists", che ricopia le liste in questione senza modificare gli originali,
+ * utilizzando una funzione di clonazione/copiatura predefinita dall'utente.
+ * 
+ * <i>NOTA:</i> Pre-condizione per l'utilizzo di questa funzione è che le due liste siano disgiunte: non è possibile, cioè, concatenare 
+ * una lista con una sua sottolista (formata da parte dei nodi della prima lista). Allo stesso modo, non è possibile inserire tutti gli elementi
+ * di una lista in se stessa per "raddoppiarli". E' possibile, però, clonare prima la lista (o una sua sottolista) e, solo in un secondo momento, 
+ * unirla alla lista originale (questo funziona poiché i nodi sono entità distinte, nonostante puntino agli stessi elementi).
  */
 void bl_insertAllElementsLast(blinked_list* l, blinked_list* elements) {
-	l->tail->next = elements->head;
-	elements->head->prev = l->tail;
-	l->size += elements->size;
-	free(elements);
+	if (l != elements) {
+		l->tail->next = elements->head;
+		elements->head->prev = l->tail;
+		l->size += elements->size;
+		free(elements);
+	}
 }
 
 // Deleting Elements
@@ -739,10 +747,19 @@ blinked_list* bl_concatenateTwoLists(blinked_list* l1, blinked_list* l2, void* (
 	return new_list;
 }
 
-// Sorting List
+void bl_mapList(blinked_list* l, void* (*map)(void*)) {
+	/// TODO
+	// DECIDERE COSA FARE CON GLI ELEMENTI ORIGINALI
+	// Cioè, una volta applicata la mappa modificherò l'elemento originale: devo eliminarlo?
+}
 
+// Managing and Modifying List
+
+char* stringifyMyStruct(void* my_object);
 /**
  * Scambia di posto due elementi della lista, date le loro posizioni.
+ * Attenzione: la funzione NON scambia di posto i nodi contenenti gli elementi; pertanto, è possibile
+ * utilizzarla in combinazione con le sotto-liste, poiché non dovrebbe (!) generare side-effects non previsti.
  */
 void bl_swapTwoElements(blinked_list* l, int pos1, int pos2) {
 	if (!bl_checkPositionValidity(l, pos1)) {
@@ -755,39 +772,111 @@ void bl_swapTwoElements(blinked_list* l, int pos1, int pos2) {
 		if (pos1 > pos2) {
 			INT_SWAP(pos1, pos2);		// Mi assicuro che pos1 < pos2
 		}
-		/// TODO: implementazione con lo scorrimento con direzione dipendente dalla posizione
-		blinked_list_node* aux1 = l->head; // Punterà al primo elemento da scambiare
-		for (int i = 0; i < pos1; i++) {
-			aux1 = aux1->next;
-		}
-		blinked_list_node* aux2 = aux1; // Punterà al secondo elemento da scambiare
-		for (int i = pos1; i < pos2; i++) {
-			aux2 = aux2->next;
+		blinked_list_node* aux1;
+		blinked_list_node* aux2; // Punterranno rispettivamente ai due nodi con gli elementi da scambiare.
+		
+		// Ora, sulla base delle posizioni, scelgo il metodo migliore per raggiungere e selezionare i nodi desiderati
+		if (2 * pos1 >= pos2 && pos1 + pos2 >= l->size) { // Scorro dalla fine per entrambi
+			aux2 = l->tail;
+			for (int i = l->size - 1; i > pos2; i--) {
+				aux2 = aux2->prev;
+			}
+			aux1 = aux2;
+			for (int i = pos2; i > pos1; i--) {
+				aux1 = aux1->prev;
+			}
+		} else if (2 * pos2 < l->size + pos1 && l->size > pos1 + pos2) { // Scorro dall'inizio per entrambi
+			aux1 = l->head;
+			for (int i = 0; i < pos1; i++) {
+				aux1 = aux1->next;
+			}
+			aux2 = aux1;
+			for (int i = pos1; i < pos2; i++) {
+				aux2 = aux2->next;
+			}
+		} else { // Scorro ciascuno dal rispettivo estremo
+			aux1 = l->head;
+			for (int i = 0; i < pos1; i++) {
+				aux1 = aux1->next;
+			}
+			aux2 = l->tail;
+			for (int i = l->size - 1; i > pos2; i--) {
+				aux2 = aux2->prev;
+			}
 		}
 		
-		if (pos1 == 0) {
-			l->head = aux2;
-		} else {
-			aux1->prev->next = aux2;
-		}
-		aux1->next->prev = aux2;
-		
-		if (pos2 == l->size - 1) {
-			l->tail = aux1;
-		} else {
-			aux2->next->prev = aux1;
-		}
-		aux2->prev->next = aux1;
-		
-		blinked_list_node* p_aux;
-		p_aux = aux1->next;
-		aux1->next = aux2->next;
-		aux2->next = p_aux;
-		p_aux = aux1->prev;
-		aux1->prev = aux2->prev;
-		aux2->prev = p_aux;
+		// Scambio i contenuti
+		void* content_aux = aux1->data;
+		aux1->data = aux2->data;
+		aux2->data = content_aux;
 	}
 }
+
+/**
+ * Inverte l'ordine dei nodi, senza modificare la dimensione della lista.
+ */
+void bl_reverseList(blinked_list* l) {
+	if (l->size == EMPTY_SIZE) {
+		EMPTY_SIZE_ERROR;
+	} else if (l->size != 1) { // In caso di elemento singolo non ha senso invertire la lista
+		blinked_list_node* iterator = l->head;
+		blinked_list_node* aux = NULL;
+		for (int i = 0; i < l->size; i++) {
+			aux = iterator->prev;
+			iterator->prev = iterator->next;
+			iterator->next = aux;
+			
+			iterator = iterator->prev;
+		}
+		l->tail = l->head;
+		l->head = aux->prev;
+	}
+}
+
+/**
+ * Funzione d'utilità.
+ */
+static void bl_makeListCircular(blinked_list* l) {
+	if (l->size == EMPTY_SIZE) {
+		EMPTY_SIZE_ERROR;
+	} else {
+		l->head->prev = l->tail;
+		l->tail->next = l->head;
+	}
+}
+
+/**
+ * "Shifta" tutti gli elementi della lista di un numero di posizioni arbitrario.
+ * Durante l'esecuzione di questa funzione, la lista viene momentaneamente convertita in un anello,
+ * e il puntatore all'elemento iniziale si sposta in avanti o all'indietro a seconda della variabile "shift".
+ * 
+ * Per valori di shift positivi, gli elementi verranno spostati "avanti" (ossia, il loro indice verrà aumentato di una
+ * quantità pari a shift). Per valori negativi, gli elementi verranno invece spostati "indietro".
+ * Il tutto, ovviamente, viene effettuato in modulo (size); pertanto, con un numero di iterazioni sufficiente, è possibile
+ * ottenere il medesimo effetto sia con valori positivi che negativi.
+ * La funzione, però, è formata in modo da scegliere autonomamente la direzione per la quale lo spostamento risulti più
+ * efficiente e veloce (ossia quello che richiede meno iterazioni).
+ */
+void bl_shiftListBy(blinked_list* l, int shift) {
+	// Modifico la lista in "anello"
+	bl_makeListCircular(l);
+	shift = ((shift % l->size) + l->size) % l->size; // Questo mi assicura che il valore di shift sia tra (0) e (size-1) compresi.
+	if (shift <= l->size / 2) { 
+		for (int i = 0; i < shift; i++) {
+			l->head = l->head->prev; // Scorro in avanti
+		}
+	} else {
+		for (int i = 0; i < l->size - shift; i++) {
+			l->head = l->head->next; // Scorro all'indietro
+		}
+	}
+	l->tail = l->head->prev;
+	// Apro l'anello e torno alla configurazione "lista"
+	l->tail->next = NULL;
+	l->head->prev = NULL;
+}
+
+// Sorting List
 
 /**
  * Ordina una lista in modo <i>crescente</i> secondo una relazione d'ordine definita dall'utente e passata come parametro.
@@ -806,6 +895,10 @@ void bl_sortByOrder(blinked_list* l, int (*compare)(void*, void*)) {
 			}
 		}
 	}
+}
+
+void bl_sortByHash(blinked_list* l, int (*hashingFunction)(void*)) {
+	/// TODO
 }
 
 /**
@@ -998,12 +1091,12 @@ int main(void) {
 	blinked_list* ll = bl_initList();
 	
 	// Inizializzo robe
-	srand(time(NULL));
-	int dim = 10;
+	//srand(time(NULL));
+	int dim = 20;
 	char* str1;
 	
 	for (int i = 0; i < dim; i++) {
-		bl_insertFirstElement(ll, initRandomTarga());
+		bl_insertLastElement(ll, initRandomTarga());
 	}
 	
 	// Stampo la lista
@@ -1011,8 +1104,11 @@ int main(void) {
 	printf("(1) %s\n", str1);
 	free(str1);
 	
+	
+	
+	
 	// FREE
-	bl_deleteList(ll);
+	bl_purgeList(ll);
 		
 	return 0;
 }
@@ -1054,10 +1150,18 @@ printf("Lista originale mangiucchiata:\n%s\n", str1);
 free(str1);
 * 
 
-	// Scambio due elementi
-	int pos1 = 0, pos2 = 6;
-	printf("Scambio gli elementi nelle posizioni %d e %d.\n", pos1, pos2);
-	bl_swapTwoElements(my_list, pos1, pos2);
+// Scambio avanzato di elementi (con controllo saltelli)
 
+for(int a = 0; a < dim; a++) {
+		for (int b = 0; b < dim; b++) {
+			printf("%d %d - ", a, b);
+			bl_swapTwoElements(ll, a, b);
+		}
+	}
+	
+	// Stampo la lista
+	str1 = bl_listToString(ll, stringifyMyStruct);
+	printf("(1) %s\n", str1);
+	free(str1);
 
 */
