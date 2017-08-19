@@ -4,6 +4,27 @@
 
 #include "List.h"
 
+/*
+ * 
+ * Idee per future implementazioni:
+ * Una lista potrà essere implementata come:
+ * - Lista linkata unidirezionale
+ * - Lista linkata bidirezionale
+ * - ArrayList con dimensione dinamica
+ * - Anello o Ring (Lista linkata bidirezionale circolare)
+ * 
+ * Strutture da implementare:
+ * - Heap (con arraylist)
+ * - Stack (con ulinked_list)
+ * - Matrice (con arraylist???) (???)
+ * - Grafo:
+ *   ~ come matrice
+ *   ~ come insieme di nodi linkati
+ * - Albero di ricerca binario (???)
+ * - Skipped List (???)
+ * 
+ */
+
 /**
  * Libreria che generalizza il concetto di lista permettendo la scelta automatica in funzione dell'implementazione interna.
  * L'utente è tenuto a specificare quale implementazione intende utilizzare (a seconda delle sue esigenze), scegliendo
