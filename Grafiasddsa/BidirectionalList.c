@@ -375,6 +375,15 @@ void bl_deleteElementsByCondition(blinked_list* l, bool (*condition)(void*)) {
 	}
 }
 
+/**
+ * Cancella i nodi di una sottolista identificata da una posizione iniziale (compresa) ed una finale (esclusa).
+ * Gli elementi vengono mantenuti in memoria; se si desidera cancellarne il contenuto, è consigliabile
+ * usare il metodo "bl_purgeSubList" al posto di questo.
+ */
+void bl_deleteSubList(blinked_list* l, int start_pos, int end_pos) {
+	bl_deleteList(bl_extractSubList(l, start_pos, end_pos));
+}
+
 // Purging Elements
 
 /**
@@ -436,6 +445,10 @@ void bl_purgeElementAtPosition(blinked_list* l, int pos) {
  */
 void bl_purgeElementsByCondition(blinked_list* l, bool (*condition)(void*)) {
 	bl_purgeList(bl_extractElementsByCondition(l, condition));
+}
+
+void bl_purgeSubList(blinked_list* l, int start_pos, int end_pos) {
+	bl_purgeList(bl_extractSubList(l, start_pos, end_pos));
 }
 
 // Getting Elements
@@ -627,6 +640,75 @@ blinked_list* bl_extractElementsByCondition(blinked_list* l, bool (*condition)(v
 	return extracted_list;
 }
 
+char* stringifyMyStruct(void* obj);
+
+blinked_list* bl_extractSubList(blinked_list* l, int start_pos, int end_pos) {
+	if (!bl_checkPositionValidity(l, start_pos)) {
+		UNVALID_POSITION_ERROR(start_pos);
+	} else if (!bl_checkPositionValidity(l, end_pos)) {
+		UNVALID_POSITION_ERROR(end_pos);
+	} else if (start_pos == end_pos) {
+		UNVALID_POSITION_ERROR(end_pos);
+	} else {
+		blinked_list* sublist = bl_initList();
+		
+		if (start_pos > end_pos) {
+			INT_SWAP(start_pos, end_pos);		// Mi assicuro che pos1 < pos2
+		}
+		
+		// Seleziono i due nodi
+		if (2 * start_pos >= end_pos && start_pos + end_pos >= l->size) { 
+			// Scorro dalla fine per entrambi
+			sublist->tail = l->tail;
+			for (int i = l->size - 1; i > end_pos - 1; i--) {
+				sublist->tail = sublist->tail->prev;
+			}
+			sublist->head = sublist->tail;
+			for (int i = end_pos - 1; i > start_pos; i--) {
+				sublist->head = sublist->head->prev;
+			}
+		} else if (2 * end_pos < l->size + start_pos && l->size > start_pos + end_pos) { 
+			// Scorro dall'inizio per entrambi
+			sublist->head = l->head;
+			for (int i = 0; i < start_pos; i++) {
+				sublist->head = sublist->head->next;
+			}
+			sublist->tail = sublist->head;
+			for (int i = start_pos; i < end_pos - 1; i++) {
+				sublist->tail = sublist->tail->next;
+			}
+		} else { 
+			// Scorro ciascuno dal rispettivo estremo
+			sublist->head = l->head;
+			for (int i = 0; i < start_pos; i++) {
+				sublist->head = sublist->head->next;
+			}
+			sublist->tail = l->tail;
+			for (int i = l->size - 1; i > end_pos - 1; i--) {
+				sublist->tail = sublist->tail->prev;
+			}
+		}
+				
+		if (start_pos == 0) {
+			l->head = sublist->tail->next;
+		} else {
+			sublist->head->prev->next = sublist->tail->next;
+		}
+		if (end_pos == l->size) {
+			l->tail = sublist->head->prev;
+		} else {
+			sublist->tail->next->prev = sublist->head->prev;
+		}
+		
+		sublist->head->prev = NULL;
+		sublist->tail->next = NULL;
+		sublist->size = end_pos - start_pos;
+		l->size -= sublist->size;
+		return sublist;
+	}
+	return NULL;
+}
+
 // Searching Elements
 
 /**
@@ -678,7 +760,7 @@ int bl_countElementsByCondition(blinked_list* l, bool (*condition)(void*)) {
  * Restituisce la posizione dell'elemento corrispondente a quello cercato.
  * Se l'elemento non è presente all'interno della lista, viene restituito il valore -1.
  */
-int bl_getElementPosition(blinked_list* l, void* element_content) {
+int bl_getPositionOfElement(blinked_list* l, void* element_content) {
 	blinked_list_node* iterator = l->head;
 	for (int i = 0; i < l->size; i++) {
 		if (iterator->data == element_content) {
@@ -755,7 +837,6 @@ void bl_mapList(blinked_list* l, void* (*map)(void*)) {
 
 // Managing and Modifying List
 
-char* stringifyMyStruct(void* my_object);
 /**
  * Scambia di posto due elementi della lista, date le loro posizioni.
  * Attenzione: la funzione NON scambia di posto i nodi contenenti gli elementi; pertanto, è possibile
@@ -769,11 +850,12 @@ void bl_swapTwoElements(blinked_list* l, int pos1, int pos2) {
 	} else if (pos1 == pos2) {
 		UNVALID_POSITION_ERROR(pos2);
 	} else {
+		blinked_list_node* aux1;
+		blinked_list_node* aux2; // Punterranno rispettivamente ai due nodi con gli elementi da scambiare.
+		
 		if (pos1 > pos2) {
 			INT_SWAP(pos1, pos2);		// Mi assicuro che pos1 < pos2
 		}
-		blinked_list_node* aux1;
-		blinked_list_node* aux2; // Punterranno rispettivamente ai due nodi con gli elementi da scambiare.
 		
 		// Ora, sulla base delle posizioni, scelgo il metodo migliore per raggiungere e selezionare i nodi desiderati
 		if (2 * pos1 >= pos2 && pos1 + pos2 >= l->size) { // Scorro dalla fine per entrambi
@@ -885,20 +967,33 @@ void bl_shiftListBy(blinked_list* l, int shift) {
  * - un numero negativo se il primo dato è "minore" del secondo (stando alla relazione).
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
+ * 
+ * L'algoritmo di ordinamento implementato è un Insertion Sort.
+ * Poichè lo spostamento di elementi agisce sul campo "data" delle strutture "blinked_list_node", è possibile
+ * utilizzare questa funzione su sottoliste ottenute da "bl_getSubList". Questo permette di ordinare solamente
+ * una porzione della lista originale.
  */
 void bl_sortByOrder(blinked_list* l, int (*compare)(void*, void*)) {
-	// Implementazione di un Bubble Sort per l'ordinamento della lista
-	for (int i = 0; i < l->size; i++) {
-		for (int j = l->size - 1; j > i; j--) {
-			if (compare(bl_getElementAtPosition(l, j), bl_getElementAtPosition(l, j - 1)) < 0) {
-				bl_swapTwoElements(l, j, j - 1);
+	if (l->size > 1) {
+		blinked_list_node* iterator = l->head->next;
+		blinked_list_node* sub_iterator = NULL;
+		void* aux = NULL;
+		for (int i = 1; i < l->size; i++) {
+			aux = iterator->data; // Elemento da inserire
+			sub_iterator = iterator;
+			while (sub_iterator != l->head && compare(aux, sub_iterator->prev->data) < 0) {
+				sub_iterator->data = sub_iterator->prev->data;
+				sub_iterator = sub_iterator->prev;
 			}
+			sub_iterator->data = aux;
+			iterator = iterator->next;
 		}
 	}
 }
 
 void bl_sortByHash(blinked_list* l, int (*hashingFunction)(void*)) {
 	/// TODO
+	// Questa è una futura (molto futura) implementazione.
 }
 
 /**
@@ -943,15 +1038,20 @@ void* bl_getMinimumElement(blinked_list* l, int (*compare)(void*, void*)) {
  * - un numero negativo se il primo dato è "minore" del secondo (stando alla relazione).
  * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
  * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
+ * 
+ * La differenza principale con la ricerca del minimo è che, in questo caso, la lista viene attraversata
+ * dalla coda alla testa. Questo perchè, in caso sia stata recentemente ordinata, sarà più veloce trovare l'elemento massimo.
+ * Questa è solo una considerazione probabilistica, non è nulla di certo. La ricerca in una lista ordinata richiede, nel caso peggiore,
+ * sempre O(n) passaggi.
  */
 static blinked_list_node* bl_getMaximumNode(blinked_list* l, int (*compare)(void*, void*)) {
-	blinked_list_node* maximum = l->head;
-	blinked_list_node* iterator = l->head->next;
+	blinked_list_node* maximum = l->tail;
+	blinked_list_node* iterator = l->tail->prev;
 	for (int i = 1; i < l->size; i++) {
 		if (compare(iterator->data, maximum->data) > 0) {
 			maximum = iterator;
 		}
-		iterator = iterator->next;
+		iterator = iterator->prev;
 	}
 	return maximum;
 }
@@ -1091,8 +1191,8 @@ int main(void) {
 	blinked_list* ll = bl_initList();
 	
 	// Inizializzo robe
-	//srand(time(NULL));
-	int dim = 20;
+	srand(time(NULL));
+	int dim = 10;
 	char* str1;
 	
 	for (int i = 0; i < dim; i++) {
@@ -1104,11 +1204,21 @@ int main(void) {
 	printf("(1) %s\n", str1);
 	free(str1);
 	
+	blinked_list* extr = bl_extractElementsByCondition(ll, hasEvenNumber);
 	
+	// Stampo la lista
+	str1 = bl_listToString(ll, stringifyMyStruct);
+	printf("(1) %s\n", str1);
+	free(str1);
 	
+	// Stampo la lista
+	str1 = bl_listToString(extr, stringifyMyStruct);
+	printf("(1) %s\n", str1);
+	free(str1);
 	
 	// FREE
 	bl_purgeList(ll);
+	bl_purgeList(extr);
 		
 	return 0;
 }
@@ -1163,5 +1273,30 @@ for(int a = 0; a < dim; a++) {
 	str1 = bl_listToString(ll, stringifyMyStruct);
 	printf("(1) %s\n", str1);
 	free(str1);
+
+
+// Ordinamento di una sottolista
+
+	
+	blinked_list* sublist = bl_getSubList(ll, 2, 8);
+	
+	
+	str1 = bl_listToString(sublist, stringifyMyStruct);
+	printf("(1) %s\n", str1);
+	free(str1);
+	
+	bl_sortByOrder(sublist, compareMyStruct);
+	
+	
+	str1 = bl_listToString(sublist, stringifyMyStruct);
+	printf("(1) %s\n", str1);
+	free(str1);
+	
+	// Stampo la lista
+	str1 = bl_listToString(ll, stringifyMyStruct);
+	printf("(1) %s\n", str1);
+	free(str1);
+	
+	free(sublist);
 
 */

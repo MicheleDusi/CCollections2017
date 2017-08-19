@@ -47,31 +47,34 @@ void bl_deleteFirstElement(blinked_list* l); // OK
 void bl_deleteLastElement(blinked_list* l); // OK
 void bl_deleteElementAtPosition(blinked_list* l, int pos); // OK
 void bl_deleteElementsByCondition(blinked_list* l, bool (*condition)(void*)); // OK
+void bl_deleteSubList(blinked_list* l, int start_pos, int end_pos); // OK // NEW
 
 // Purging Elements
 void bl_purgeFirstElement(blinked_list* l); // OK
 void bl_purgeLastElement(blinked_list* l); // OK
 void bl_purgeElementAtPosition(blinked_list* l, int pos); // OK
 void bl_purgeElementsByCondition(blinked_list* l, bool (*condition)(void*)); // OK
+void bl_purgeSubList(blinked_list* l, int start_pos, int end_pos); // OK // NEW
 
 // Getting Elements
-void* bl_getFirstElement(blinked_list* l); 
-void* bl_getLastElement(blinked_list* l); 
-void* bl_getElementAtPosition(blinked_list* l, int pos); 
-blinked_list* bl_getElementsByCondition(blinked_list* l, bool (*condition)(void*));  
-blinked_list* bl_getSubList(blinked_list* l, int start_pos, int end_pos); 
+void* bl_getFirstElement(blinked_list* l); // OK
+void* bl_getLastElement(blinked_list* l); // OK
+void* bl_getElementAtPosition(blinked_list* l, int pos); // OK
+blinked_list* bl_getElementsByCondition(blinked_list* l, bool (*condition)(void*)); // OK 
+blinked_list* bl_getSubList(blinked_list* l, int start_pos, int end_pos); // OK
 
 // Extracting Elements
-void* bl_extractFirstElement(blinked_list* l); 
-void* bl_extractLastElement(blinked_list* l); 
-void* bl_extractElementAtPosition(blinked_list* l, int pos); 
-blinked_list* bl_extractElementsByCondition(blinked_list* l, bool (*condition)(void*));  
+void* bl_extractFirstElement(blinked_list* l); // OK
+void* bl_extractLastElement(blinked_list* l); // OK
+void* bl_extractElementAtPosition(blinked_list* l, int pos); // OK
+blinked_list* bl_extractElementsByCondition(blinked_list* l, bool (*condition)(void*)); 
+blinked_list* bl_extractSubList(blinked_list* l, int start_pos, int end_pos); // OK // NEW
 
 // Searching Elements
 bool bl_containsElement(blinked_list* l, void* element_content); 
 bool bl_containsElementByCondition(blinked_list* l, bool (*condition)(void*)); 
 int bl_countElementsByCondition(blinked_list* l, bool (*condition)(void*)); 
-int bl_getElementPosition(blinked_list* l, void* element_content); 
+int bl_getPositionOfElement(blinked_list* l, void* element_content); /// Refactored
 
 // Cloning and Mapping List
 blinked_list* bl_cloneOrderedList(blinked_list* l, void* (*clone)(void*)); 
@@ -81,16 +84,16 @@ void bl_mapList(blinked_list* l, void* (*map)(void*)); /// TODO
 
 // Managing and Modifying List
 void bl_swapTwoElements(blinked_list* l, int pos1, int pos2); // OK
-void bl_reverseList(blinked_list* l); // OK
-void bl_shiftListBy(blinked_list* l, int shift); // OK
+void bl_reverseList(blinked_list* l); // OK // NEW
+void bl_shiftListBy(blinked_list* l, int shift); // OK // NEW
 
 // Sorting List
-void bl_sortByOrder(blinked_list* l, int (*compare)(void*, void*)); 
+void bl_sortByOrder(blinked_list* l, int (*compare)(void*, void*)); // OK
 void bl_sortByHash(blinked_list* l, int (*hashingFunction)(void *)); /// TODO
-void* bl_getMinimumElement(blinked_list* l, int (*compare)(void*, void*)); 
-void* bl_getMaximumElement(blinked_list* l, int (*compare)(void*, void*)); 
+void* bl_getMinimumElement(blinked_list* l, int (*compare)(void*, void*)); // OK
+void* bl_getMaximumElement(blinked_list* l, int (*compare)(void*, void*)); // OK
 
 // Visualizing List
-char* bl_listToString(blinked_list* l, char* (*toStringFunction)(void*)); 
+char* bl_listToString(blinked_list* l, char* (*toStringFunction)(void*)); // OK
 
 #endif
