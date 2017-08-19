@@ -67,7 +67,7 @@ blinked_list* bl_getSubList(blinked_list* l, int start_pos, int end_pos); // OK
 void* bl_extractFirstElement(blinked_list* l); // OK
 void* bl_extractLastElement(blinked_list* l); // OK
 void* bl_extractElementAtPosition(blinked_list* l, int pos); // OK
-blinked_list* bl_extractElementsByCondition(blinked_list* l, bool (*condition)(void*)); 
+blinked_list* bl_extractElementsByCondition(blinked_list* l, bool (*condition)(void*)); // OK
 blinked_list* bl_extractSubList(blinked_list* l, int start_pos, int end_pos); // OK // NEW
 
 // Searching Elements

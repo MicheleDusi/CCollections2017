@@ -614,7 +614,8 @@ blinked_list* bl_extractElementsByCondition(blinked_list* l, bool (*condition)(v
 	bl_insertInitialElement(extracted_list, NULL); // NODO FAKE per agevolare le operazioni
 	// Ciclo su tutti gli elementi NON estremi
 	blinked_list_node* iterator = l->head;
-	for (int i = 1; i < l->size - 1; i++) {
+	int size = l->size;
+	for (int i = 1; i < size - 1; i++) {
 		if (condition(iterator->next->data)) {
 			extracted_list->tail->next = iterator->next;
 			iterator->next = iterator->next->next;
