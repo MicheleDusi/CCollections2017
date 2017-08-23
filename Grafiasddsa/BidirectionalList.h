@@ -71,15 +71,15 @@ blinked_list* bl_extractElementsByCondition(blinked_list* l, bool (*condition)(v
 blinked_list* bl_extractSubList(blinked_list* l, int start_pos, int end_pos); // OK // NEW
 
 // Searching Elements
-bool bl_containsElement(blinked_list* l, void* element_content); 
-bool bl_containsElementByCondition(blinked_list* l, bool (*condition)(void*)); 
-int bl_countElementsByCondition(blinked_list* l, bool (*condition)(void*)); 
-int bl_getPositionOfElement(blinked_list* l, void* element_content); /// Refactored
+bool bl_containsElement(blinked_list* l, void* element_content); // OK
+bool bl_containsElementByCondition(blinked_list* l, bool (*condition)(void*)); // OK
+int bl_countElementsByCondition(blinked_list* l, bool (*condition)(void*)); // OK 
+int bl_getPositionOfElement(blinked_list* l, void* element_content); // OK
 
 // Cloning List
-blinked_list* bl_cloneOrderedList(blinked_list* l, void* (*clone)(void*)); 
-blinked_list* bl_cloneSubList(blinked_list* l, int start_pos, int end_pos, void* (*clone)(void*)); 
-blinked_list* bl_concatenateTwoLists(blinked_list* l1, blinked_list* l2, void* (*clone)(void*));
+blinked_list* bl_cloneOrderedList(blinked_list* l, void* (*clone)(void*)); // OK
+blinked_list* bl_cloneSubList(blinked_list* l, int start_pos, int end_pos, void* (*clone)(void*)); // OK
+blinked_list* bl_concatenateTwoLists(blinked_list* l1, blinked_list* l2, void* (*clone)(void*)); // OK
 
 // Managing and Modifying List
 void bl_swapTwoElements(blinked_list* l, int pos1, int pos2); // OK
@@ -88,7 +88,7 @@ void bl_shiftListBy(blinked_list* l, int shift); // OK // NEW
 
 // Generic Operations On Elements
 void bl_iterateOnElements(blinked_list* l, void (*procedure)(void*)); // OK // NEW
-void bl_mapElements(blinked_list* l, void* (*unaryMap)(void*)); // NEW
+void bl_mapElements(blinked_list* l, void* (*unaryMap)(void*)); // OK // NEW
 void* bl_cumulateElements(blinked_list* l, void* (*binaryOperation)(void*, void*)); // OK // NEW
 void* bl_getMinimumElement(blinked_list* l, int (*compare)(void*, void*)); // OK /// Refactored position
 void* bl_getMaximumElement(blinked_list* l, int (*compare)(void*, void*)); // OK /// Refactored position

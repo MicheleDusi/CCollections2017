@@ -985,6 +985,7 @@ void bl_mapElements(blinked_list* l, void* (*unaryMap)(void*)) {
 		blinked_list_node* iterator = l->head;
 		for (int i = 0; i < l->size; i++) {
 			iterator->data = unaryMap(iterator->data);
+			iterator = iterator->next;
 		}	
 	}
 }
@@ -1276,16 +1277,22 @@ void* mediateTwoTarghe(void* obj1, void* obj2) {
 	return result;
 }
 
+typedef struct {
+	int value;
+} number;
+
 void* mapToInteger(void* obj) {
-	int* num = malloc(sizeof(int));
-	*num = ((targa*)obj)->three_numbers;
-	//free(obj);
+	number* num = malloc(sizeof(number));
+	targa* trg = (targa*)obj;
+	num->value = trg->three_numbers;
+	free(trg);
 	return num;
 }
 
-char* stringifyMyInteger(void* obj) {
-	char* str = malloc(sizeof(char) * 10);
-	sprintf(str, "%d", *((int*)obj));
+char* stringifyMyNumber(void* obj) {
+	char* str = malloc(sizeof(char) * 6);
+	number* num = (number*)obj;
+	sprintf(str, "%5d", num->value);
 	return str;
 }
 
@@ -1309,12 +1316,7 @@ int main(void) {
 	printf("(1) %s\n", str1);
 	free(str1);
 	
-	bl_mapElements(ll, mapToInteger);
-	
-	// Stampo la lista
-	str1 = bl_listToString(ll, stringifyMyInteger);
-	printf("(NUMs) %s\n", str1);
-	free(str1);	
+	// [ INSERIRE TEST QUI ]
 	
 	// FREE
 	bl_purgeList(ll);
@@ -1405,4 +1407,45 @@ for(int a = 0; a < dim; a++) {
 	free(result);
 	printf("Risultato cumulato: %s\n", str1);
 	free(str1);
+
+// Mappatura su interi
+
+	bl_mapElements(ll, mapToInteger);
+	
+	// Stampo la lista
+	str1 = bl_listToString(ll, stringifyMyNumber);
+	printf("(NUMs) %s\n", str1);
+	free(str1);	
+
+// Ricerca elemento e posizione
+
+	targa* new = initRandomTarga();
+	int pos = rand() % bl_getListSize(ll);
+	
+	printf("L'elemento dovrebbe essere inserito alla posizione %d.\n", pos);
+	
+	bl_insertElementAtPosition(ll, new, pos);
+	
+	printf("L'elemento è stato inserito alla posizione %d.\n", bl_getPositionOfElement(ll, new));
+
+// Clonazione lista/sottolista e concatenazione
+
+	blinked_list* nl = bl_cloneSubList(ll, 3, 7, cloneMyStruct);
+	
+	// Stampo la lista
+	str1 = bl_listToString(nl, stringifyMyStruct);
+	printf("(2) %s\n", str1);
+	free(str1);
+	
+	blinked_list* summed = bl_concatenateTwoLists(ll, nl, cloneMyStruct);
+	
+	// Stampo la lista
+	str1 = bl_listToString(summed, stringifyMyStruct);
+	printf("(3) %s\n", str1);
+	free(str1);
+	
+	bl_purgeList(nl);
+	bl_purgeList(summed);
+
+
 */
