@@ -69,7 +69,7 @@ ulinked_list* ul_extractElementsByCondition(ulinked_list* l, bool (*condition)(v
 bool ul_containsElement(ulinked_list* l, void* element_content); // OK
 bool ul_containsElementByCondition(ulinked_list* l, bool (*condition)(void*)); // OK
 int ul_countElementsByCondition(ulinked_list* l, bool (*condition)(void*)); // OK
-int ul_getElementPosition(ulinked_list* l, void* element_content); // OK
+int ul_getPositionOfElement(ulinked_list* l, void* element_content); // OK
 
 // Cloning and Managing List
 ulinked_list* ul_cloneOrderedList(ulinked_list* l, void* (*clone)(void*)); // OK

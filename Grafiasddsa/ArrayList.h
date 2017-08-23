@@ -55,7 +55,7 @@ arraylist* al_extractElementsByCondition(arraylist* l, bool (*condition)(void*))
 bool al_containsElement(arraylist* l, void* element_content); // OK
 bool al_containsElementByCondition(arraylist* l, bool (*condition)(void*)); // OK
 int al_countElementsByCondition(arraylist* l, bool (*condition)(void*)); // OK
-int al_getElementPosition(arraylist* l, void* element_content); // OK
+int al_getPositionOfElement(arraylist* l, void* element_content); // OK
 
 // Cloning and Managing List
 arraylist* al_cloneOrderedList(arraylist* l, void* (*clone)(void*)); // OK

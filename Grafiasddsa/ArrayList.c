@@ -516,7 +516,7 @@ int al_countElementsByCondition(arraylist* l, bool (*condition)(void*)) {
  * Restituisce la posizione dell'elemento corrispondente a quello cercato.
  * Se l'elemento non è presente all'interno della lista, viene restituito il valore -1.
  */
-int al_getElementPosition(arraylist* l, void* element_content) {
+int al_getPositionOfElement(arraylist* l, void* element_content) {
 	for (int i = 0; i < l->size; i++) {
 		if (element_content == l->array[i]) {
 			return i;

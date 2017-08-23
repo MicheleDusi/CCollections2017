@@ -562,7 +562,7 @@ int ul_countElementsByCondition(ulinked_list* l, bool (*condition)(void*)) {
  * Restituisce la posizione dell'elemento corrispondente a quello cercato.
  * Se l'elemento non è presente all'interno della lista, viene restituito il valore -1.
  */
-int ul_getElementPosition(ulinked_list* l, void* element_content) {
+int ul_getPositionOfElement(ulinked_list* l, void* element_content) {
 	ulinked_list_node* iterator = l->head;
 	for (int i = 0; i < l->size; i++) {
 		if (iterator->data == element_content) {
