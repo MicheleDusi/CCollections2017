@@ -830,12 +830,6 @@ blinked_list* bl_concatenateTwoLists(blinked_list* l1, blinked_list* l2, void* (
 	return new_list;
 }
 
-void bl_mapList(blinked_list* l, void* (*map)(void*)) {
-	/// TODO
-	// DECIDERE COSA FARE CON GLI ELEMENTI ORIGINALI
-	// Cioè, una volta applicata la mappa modificherò l'elemento originale: devo eliminarlo?
-}
-
 // Managing and Modifying List
 
 /**
@@ -959,42 +953,73 @@ void bl_shiftListBy(blinked_list* l, int shift) {
 	l->head->prev = NULL;
 }
 
-// Sorting List
+// Generic Operations On Elements
 
 /**
- * Ordina una lista in modo <i>crescente</i> secondo una relazione d'ordine definita dall'utente e passata come parametro.
- * La relazione deve essere implementata come una funzione che prende in ingresso il contenuto di due nodi, 
- * e li confronta restituendo:
- * - un numero negativo se il primo dato è "minore" del secondo (stando alla relazione).
- * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
- * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
- * 
- * L'algoritmo di ordinamento implementato è un Insertion Sort.
- * Poichè lo spostamento di elementi agisce sul campo "data" delle strutture "blinked_list_node", è possibile
- * utilizzare questa funzione su sottoliste ottenute da "bl_getSubList". Questo permette di ordinare solamente
- * una porzione della lista originale.
+ * Data una procedura passata come parametro, la funzione scorre su tutta la lista e applica la procedura
+ * ad ogni elemento. La procedura non deve richiedere altri parametri al di fuori del singolo elemento, e
+ * non deve restituire alcun valore.
  */
-void bl_sortByOrder(blinked_list* l, int (*compare)(void*, void*)) {
-	if (l->size > 1) {
-		blinked_list_node* iterator = l->head->next;
-		blinked_list_node* sub_iterator = NULL;
-		void* aux = NULL;
-		for (int i = 1; i < l->size; i++) {
-			aux = iterator->data; // Elemento da inserire
-			sub_iterator = iterator;
-			while (sub_iterator != l->head && compare(aux, sub_iterator->prev->data) < 0) {
-				sub_iterator->data = sub_iterator->prev->data;
-				sub_iterator = sub_iterator->prev;
-			}
-			sub_iterator->data = aux;
-			iterator = iterator->next;
-		}
+void bl_iterateOnElements(blinked_list* l, void (*procedure)(void*)) {
+	blinked_list_node* iterator = l->head;
+	for (int i = 0; i < l->size; i++) {
+		procedure(iterator->data);
+		iterator = iterator->next;
 	}
 }
 
-void bl_sortByHash(blinked_list* l, int (*hashingFunction)(void*)) {
-	/// TODO
-	// Questa è una futura (molto futura) implementazione.
+/**
+ * Mappa gli elementi di una lista secondo una funzione data, eliminando i precedenti contenuti.
+ * Attenzione: è responsabilità della funzione di mappatura occuparsi della liberazione della memoria dei
+ * precendenti contenuti, se ritenuto necessario dal programmatore. 
+ * Se si considera opportuno, invece, non alterare la lista originale, esiste già il metodo "cloneOrderedList" 
+ * che permette la creazione di una nuova lista anche mappata, se viene passata come parametro la funzione di 
+ * mappatura al posto di quella di clonazione.
+ * Questa funzione, pertanto, è stata esplicitamente scritta per sostituire gli elementi di una lista con i
+ * corrispettivi calcolati secondo la mappa. L'utilizzatore è responsabile delle conseguenze sui dati originali.
+ */
+void bl_mapElements(blinked_list* l, void* (*unaryMap)(void*)) {
+	if (l->size == EMPTY_SIZE) {
+		EMPTY_SIZE_ERROR;
+	} else {
+		blinked_list_node* iterator = l->head;
+		for (int i = 0; i < l->size; i++) {
+			iterator->data = unaryMap(iterator->data);
+		}	
+	}
+}
+
+/**
+ * Sia A l'insieme di tutti gli elementi dello stesso tipo di quelli contenuti nella lista.
+ * Sia f: A x A -> A un'operazione binaria sugli elementi di A che gode delle seguenti proprietà:
+ * - Associativa [ f (a, f (b, c)) = f (f (a, b), c) ]
+ * - Commutativa [ f (a, b) = f (b, a) ]
+ * Passata tale operazione come parametro della funzione "bl_cumulateElements", questa permette di scorrere la lista e
+ * di applicare l'operazione a tutti i suoi elementi, restituendo il valore f(e1, e2, e3, e4, e5, ..., eN).
+ * Le proprietà sono necessarie affinché l'ordine in cui vengono "cumulati" gli elementi della lista non
+ * influenzi il risultato.
+ * 
+ * <i>NOTA:</i> Si considera il funzionamento dell'operazione basato sull'utilizzo di "malloc" per quanto riguarda la
+ * computazione del risultato, pertanto questa funzione implementa automaticamente il "free" della memoria occupata
+ * dai risultati intermedi calcolati durante l'esecuzione. In caso la memoria non fosse stata allocata dinamicamente,
+ * verrebbe generato un errore.
+ */
+void* bl_cumulateElements(blinked_list* l, void* (*binaryOperation)(void*, void*)) {
+	if (l->size > 1) {
+		void* result = binaryOperation(l->head->data, l->head->next->data);
+		blinked_list_node* iterator = l->head->next->next;
+		for (int i = 2; i < l->size; i++) {
+			void* new_result = binaryOperation(result, iterator->data);
+			free(result);
+			result = new_result;			// Necessario per la liberazione della memoria ausiliaria
+			iterator = iterator->next;
+		}
+		return result;
+	 } else {
+		 EMPTY_SIZE_ERROR;
+		 return NULL;
+	 }
+	
 }
 
 /**
@@ -1070,12 +1095,56 @@ void* bl_getMaximumElement(blinked_list* l, int (*compare)(void*, void*)) {
 	return bl_getMaximumNode(l, compare)->data;
 }
 
+// Sorting List
+
+/**
+ * Ordina una lista in modo <i>crescente</i> secondo una relazione d'ordine definita dall'utente e passata come parametro.
+ * La relazione deve essere implementata come una funzione che prende in ingresso il contenuto di due nodi, 
+ * e li confronta restituendo:
+ * - un numero negativo se il primo dato è "minore" del secondo (stando alla relazione).
+ * - 0 se i due dati sono considerati uguali dalla relazione d'ordine.
+ * - un numero positivo se il primo dato è "maggiore" del secondo (stando alla relazione).
+ * 
+ * L'algoritmo di ordinamento implementato è un Insertion Sort.
+ * Poichè lo spostamento di elementi agisce sul campo "data" delle strutture "blinked_list_node", è possibile
+ * utilizzare questa funzione su sottoliste ottenute da "bl_getSubList". Questo permette di ordinare solamente
+ * una porzione della lista originale.
+ */
+void bl_sortByOrder(blinked_list* l, int (*compare)(void*, void*)) {
+	if (l->size > 1) {
+		blinked_list_node* iterator = l->head->next;
+		blinked_list_node* sub_iterator = NULL;
+		void* aux = NULL;
+		for (int i = 1; i < l->size; i++) {
+			aux = iterator->data; // Elemento da inserire
+			sub_iterator = iterator;
+			while (sub_iterator != l->head && compare(aux, sub_iterator->prev->data) < 0) {
+				sub_iterator->data = sub_iterator->prev->data;
+				sub_iterator = sub_iterator->prev;
+			}
+			sub_iterator->data = aux;
+			iterator = iterator->next;
+		}
+	}
+}
+
+void bl_sortByHash(blinked_list* l, int (*hashingFunction)(void*)) {
+	/// TODO
+	// Questa è una futura (molto futura) implementazione.
+}
+
+
 // Visualizing List
 
 /**
  * Restituisce una stringa che rappresenta gli elementi contenuti all'interno della lista.
  * Per rappresentare ogni singolo nodo viene passata come parametro la funzione che converte in stringa il contenuto
- * di un elemento. E' necessario fornire anche la dimensione massima della stringa di un singolo elemento.
+ * di un elemento.
+ * 
+ * <i>NOTA:</i> Si considera il funzionamento della funzione "toString" basato sull'utilizzo di "malloc" per quanto riguarda la
+ * creazione della stringa relativa ad un singolo elemento, pertanto questa funzione implementa automaticamente il "free" della
+ * memoria occupata dalle stringhe ausiliarie all'esecuzione. In caso la memoria non fosse stata allocata dinamicamente,
+ * verrebbe generato un errore.
  */
 char* bl_listToString(blinked_list* l, char* (*toStringFunction)(void*)) {
 	char* s = malloc(sizeof(char) * (strlen(STRING_TITLE) + 5));
@@ -1140,7 +1209,7 @@ targa* initRandomTarga() {
 
 char* stringifyMyStruct(void* my_object) {
 	targa* aux_targa = (targa*)my_object;
-	char* created_string = malloc(sizeof(char) * (strlen(TARGA_STRING_FORMAT) *2));
+	char* created_string = malloc(sizeof(char) * (strlen(TARGA_STRING_FORMAT) + 1));
 	if (!created_string) {
 		printf("Memory Error: cannot create new \"targa\".\n");
 	}
@@ -1185,6 +1254,41 @@ void* cloneMyStruct(void* obj) {
 	return new;
 }
 
+void printMyStruct(void* obj) {
+	char* str = stringifyMyStruct(obj);
+	printf("%s\n", str);
+	free(str);
+}
+
+void* mediateTwoTarghe(void* obj1, void* obj2) {
+	targa* result = malloc(sizeof(targa));
+	if (!result) {
+		MEMORY_ERROR;
+	}
+	targa* t1 = (targa*) obj1;
+	targa* t2 = (targa*) obj2;
+	result->first_letters[0] = (t1->first_letters[0] + t2->first_letters[0]) / 2;
+	result->first_letters[1] = (t1->first_letters[1] + t2->first_letters[1]) / 2;
+	result->three_numbers = (t1->three_numbers + t2->three_numbers) / 2;
+	result->last_letters[0] = (t1->last_letters[0] + t2->last_letters[0]) / 2;
+	result->last_letters[1] = (t1->last_letters[1] + t2->last_letters[1]) / 2;
+	
+	return result;
+}
+
+void* mapToInteger(void* obj) {
+	int* num = malloc(sizeof(int));
+	*num = ((targa*)obj)->three_numbers;
+	//free(obj);
+	return num;
+}
+
+char* stringifyMyInteger(void* obj) {
+	char* str = malloc(sizeof(char) * 10);
+	sprintf(str, "%d", *((int*)obj));
+	return str;
+}
+
 #include <time.h>
 
 int main(void) {
@@ -1199,27 +1303,21 @@ int main(void) {
 	for (int i = 0; i < dim; i++) {
 		bl_insertLastElement(ll, initRandomTarga());
 	}
-	
+		
 	// Stampo la lista
 	str1 = bl_listToString(ll, stringifyMyStruct);
 	printf("(1) %s\n", str1);
 	free(str1);
 	
-	blinked_list* extr = bl_extractElementsByCondition(ll, hasEvenNumber);
+	bl_mapElements(ll, mapToInteger);
 	
 	// Stampo la lista
-	str1 = bl_listToString(ll, stringifyMyStruct);
-	printf("(1) %s\n", str1);
-	free(str1);
-	
-	// Stampo la lista
-	str1 = bl_listToString(extr, stringifyMyStruct);
-	printf("(1) %s\n", str1);
-	free(str1);
+	str1 = bl_listToString(ll, stringifyMyInteger);
+	printf("(NUMs) %s\n", str1);
+	free(str1);	
 	
 	// FREE
 	bl_purgeList(ll);
-	bl_purgeList(extr);
 		
 	return 0;
 }
@@ -1300,4 +1398,11 @@ for(int a = 0; a < dim; a++) {
 	
 	free(sublist);
 
+// Calcolo della """somma""" degli elementi
+
+	targa* result = bl_cumulateElements(ll, mediateTwoTarghe);
+	str1 = stringifyMyStruct(result);
+	free(result);
+	printf("Risultato cumulato: %s\n", str1);
+	free(str1);
 */

@@ -76,22 +76,25 @@ bool bl_containsElementByCondition(blinked_list* l, bool (*condition)(void*));
 int bl_countElementsByCondition(blinked_list* l, bool (*condition)(void*)); 
 int bl_getPositionOfElement(blinked_list* l, void* element_content); /// Refactored
 
-// Cloning and Mapping List
+// Cloning List
 blinked_list* bl_cloneOrderedList(blinked_list* l, void* (*clone)(void*)); 
 blinked_list* bl_cloneSubList(blinked_list* l, int start_pos, int end_pos, void* (*clone)(void*)); 
-blinked_list* bl_concatenateTwoLists(blinked_list* l1, blinked_list* l2, void* (*clone)(void*)); 
-void bl_mapList(blinked_list* l, void* (*map)(void*)); /// TODO
+blinked_list* bl_concatenateTwoLists(blinked_list* l1, blinked_list* l2, void* (*clone)(void*));
 
 // Managing and Modifying List
 void bl_swapTwoElements(blinked_list* l, int pos1, int pos2); // OK
 void bl_reverseList(blinked_list* l); // OK // NEW
 void bl_shiftListBy(blinked_list* l, int shift); // OK // NEW
 
+// Generic Operations On Elements
+void bl_iterateOnElements(blinked_list* l, void (*procedure)(void*)); // OK // NEW
+void bl_mapElements(blinked_list* l, void* (*unaryMap)(void*)); // NEW
+void* bl_cumulateElements(blinked_list* l, void* (*binaryOperation)(void*, void*)); // OK // NEW
+void* bl_getMinimumElement(blinked_list* l, int (*compare)(void*, void*)); // OK /// Refactored position
+void* bl_getMaximumElement(blinked_list* l, int (*compare)(void*, void*)); // OK /// Refactored position
+
 // Sorting List
 void bl_sortByOrder(blinked_list* l, int (*compare)(void*, void*)); // OK
-void bl_sortByHash(blinked_list* l, int (*hashingFunction)(void *)); /// TODO
-void* bl_getMinimumElement(blinked_list* l, int (*compare)(void*, void*)); // OK
-void* bl_getMaximumElement(blinked_list* l, int (*compare)(void*, void*)); // OK
 
 // Visualizing List
 char* bl_listToString(blinked_list* l, char* (*toStringFunction)(void*)); // OK
