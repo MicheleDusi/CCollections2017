@@ -18,12 +18,6 @@
 #	define EMPTY_SIZE_ERROR(instr) printf("Error: Cannot execute \"%s\" function on empty heap.", instr )
 #endif
 
-#ifndef STRING_FORMAT_HEAP
-	#define STRING_FORMAT_HEAP
-	#define SPACING "----"
-	#define NODE_STRING_LENGTH 30
-#endif
-
 /**
  * Libreria che permette la creazione e gestione di un max-heap binario, implementato come arraylist.
  * 
@@ -103,11 +97,13 @@ void bh_purgeHeap(binaryheap* h) {
  */
 void bh_insertElement(binaryheap* h, void* new_element) {
 	al_insertLastElement(h->al, new_element);
-	int index = al_getListSize(h->al);
+	int index = h->al->size;
 	while (index > 1) {
-		if (h->comparefunction(new_element, h->al->array[HEAP_TO_ARRAY(index / 2)])) {
+		if (h->comparefunction(new_element, h->al->array[HEAP_TO_ARRAY(index / 2)]) > 0) {
 			al_swapTwoElements(h->al, HEAP_TO_ARRAY(index / 2), HEAP_TO_ARRAY(index));
 			index /= 2;
+		} else {
+			index = 1; // Esce dal ciclo
 		}
 	}
 }
@@ -310,44 +306,64 @@ void* bh_getMinimumElement(binaryheap* h) {
 
 // Visualizing Heap
 
+#ifndef STRING_FORMAT_HEAP
+#	define STRING_FORMAT_HEAP
+#	define STRING_TITLE_HEAP "HEAP [size: %d]\n"
+#	define SPACING "----"
+#endif
+
 /**
  * Funzione interna ricorsiva per la rappresentazione di una sotto-heap.
  */
 static char* bh_getSubtreeString(binaryheap* h, char* (*toStringFunction)(void*), int index, int level) {
-	int power = 1;
-	for (int i = 0; i < level; i++) power *= 2; // Elevo 2 alla potenza level-esima.
+	char* str = malloc(strlen(SPACING) * level + 2);
+	sprintf(str, "-");
+	char* aux = NULL;
 	
-	char* str = malloc ((int)(h->al->size / power) * NODE_STRING_LENGTH * sizeof(char)); // Calcolo dello spazio necessario
-	if (!str) {
-		MEMORY_ERROR;
-	}
-	// Figlio sx
+	// NODO CORRENTE (n)
+	// Spacing
 	for (int i = 0; i < level; i++) {
 		strcat(str, SPACING);
 	}
-	strcat(str, toStringFunction(h->al->array[HEAP_TO_ARRAY(index * 2)]));
-	strcat(str, "\n");
+	// Rappresentazione
+	aux = toStringFunction(h->al->array[HEAP_TO_ARRAY(index)]);
+	str = realloc(str, strlen(str) + strlen(aux) + 1);
+	strcat(str, aux);
+	free(aux);
+	
+	// PRIMO FIGLIO (2n)
 	if (index * 2 <= h->al->size) {
-		strcat(str, bh_getSubtreeString(h, toStringFunction, index * 2, level + 1));
+		aux = bh_getSubtreeString(h, toStringFunction, index * 2, level + 1);
+		str = realloc(str, strlen(str) + strlen(aux) + 3);
+		strcat(str, "\n");
+		strcat(str, aux);
+		free(aux);
 	}
-	// Figlio dx
-	for (int i = 0; i < level; i++) {
-		strcat(str, SPACING);
-	}
-	strcat(str, toStringFunction(h->al->array[HEAP_TO_ARRAY(index * 2 + 1)]));
-	strcat(str, "\n");
-	if (index * 2 + 1 <= h->al->size) {
-		strcat(str, bh_getSubtreeString(h, toStringFunction, index * 2 + 1, level + 1));
-	}
-	return str;
 	
+	// SECONDO FIGLIO (2n+1)
+	if (index * 2 + 1 <= h->al->size) {
+		aux = bh_getSubtreeString(h, toStringFunction, index * 2 + 1, level + 1);
+		str = realloc(str, strlen(str) + strlen(aux) + 3);
+		strcat(str, "\n");
+		strcat(str, aux);
+		free(aux);
+	}
+	
+	return str;	
 }
 
 /**
  * Restituisce la rappresentazione dell'Heap binario come stringa.
  */
 char* bh_heapToString(binaryheap* h, char* (*toStringFunction)(void*)) {
-	return bh_getSubtreeString(h, toStringFunction, 1, 0);
+	char* str = malloc(strlen(STRING_TITLE_HEAP) + 1);
+	sprintf(str, STRING_TITLE_HEAP, h->al->size);
+	char* aux = bh_getSubtreeString(h, toStringFunction, 1, 0);
+	str = realloc(str, strlen(str) + strlen(aux) + 3);
+	strcat(str, aux);
+	strcat(str, "\n");
+	free(aux);
+	return str;	
 }
 
 
@@ -482,8 +498,7 @@ int main(void) {
 	
 	binaryheap* hh = bh_initHeap(compareMyStruct);
 	char* str1;
-	
-	srand(time(NULL));
+	//srand(time(NULL));
 	
 	int dim = 10;
 	
@@ -491,14 +506,34 @@ int main(void) {
 		bh_insertElement(hh, initRandomTarga());
 	}
 	
-	str1 = al_listToString(hh->al, stringifyMyStruct);
+	//Stampo la LISTA
+	str1 = bh_heapToString(hh, stringifyMyStruct);
 	printf("%s", str1);
-	free(str1);
+	free(str1);	
 	
 	// Cleaning
 	bh_purgeHeap(hh);
 	
 	return 0;
-	
 }
 
+// TESTING VARIO //
+/*
+// Aggiunta sequenziale di elementi
+
+	for (int i = 0; i < dim; i++) {
+		void* new_elem = initRandomTarga();
+		str1 = stringifyMyStruct(new_elem);
+		printf("Sto inserendo l'elemento %s:\n", str1);
+		free(str1);
+		
+		bh_insertElement(hh, new_elem);
+		
+		//Stampo la LISTA
+		str1 = al_listToString(hh->al, stringifyMyStruct);
+		printf("%s\n", str1);
+		free(str1);
+	}
+
+
+ */

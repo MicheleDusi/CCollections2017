@@ -9,17 +9,17 @@ typedef struct binaryheap {
 } binaryheap;
 
 // Initializing Heap
-binaryheap* bh_initHeap(int (*compare)(void*, void*));
+binaryheap* bh_initHeap(int (*compare)(void*, void*)); // OK
 
 // Size
 int bh_getHeapSize(binaryheap* h);
 
 // Cancelling Heap
 void bh_deleteHeap(binaryheap* h);
-void bh_purgeHeap(binaryheap* h);
+void bh_purgeHeap(binaryheap* h); // OK
 
 // Inserting Elements
-void bh_insertElement(binaryheap* h, void* new_element);
+void bh_insertElement(binaryheap* h, void* new_element); // OK
 void bh_insertAllElements(binaryheap* h, arraylist* elements); /// TODO
 
 // Deleting Elements
