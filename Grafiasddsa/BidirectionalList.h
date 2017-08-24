@@ -46,6 +46,7 @@ void bl_insertAllElementsLast(blinked_list* l, blinked_list* elements); // OK
 void bl_deleteFirstElement(blinked_list* l); // OK
 void bl_deleteLastElement(blinked_list* l); // OK
 void bl_deleteElementAtPosition(blinked_list* l, int pos); // OK
+void bh_deleteElementByContent(binaryheap* h, void* element_to_delete); /// TODO
 void bl_deleteElementsByCondition(blinked_list* l, bool (*condition)(void*)); // OK
 void bl_deleteSubList(blinked_list* l, int start_pos, int end_pos); // OK // NEW
 
