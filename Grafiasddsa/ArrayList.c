@@ -675,12 +675,13 @@ char* al_listToString(arraylist* l, char* (*toStringFunction)(void*)) {
 		MEMORY_ERROR;
 	}
 	sprintf(final_str, STRING_TITLE, l->size);
-	char* aux_string = " ";
+	char* aux_string;
 	for (int i = 0; i < l->size; i++) {
 		aux_string = toStringFunction(l->array[i]);
-		int new_length = strlen(final_str) + strlen(aux_string) + 2;
+		int new_length = strlen(final_str) + strlen(aux_string) + 5;
 		final_str = realloc(final_str, new_length * sizeof(char));
 		strcat(final_str, aux_string);
+		strcat(final_str, "   ");
 		free(aux_string);
 	}
 	strcat(final_str, "\n");
@@ -690,6 +691,11 @@ char* al_listToString(arraylist* l, char* (*toStringFunction)(void*)) {
 //////////////////////////////////////////////////////
 //////////////////////////////////////////////////////
 // TESTING //
+
+/*
+
+#ifndef TARGA_TESTING
+#define TARGA_TESTING 
 
 typedef struct {
 	char first_letters[2];
@@ -718,7 +724,7 @@ targa* initRandomTarga() {
 
 char* stringifyMyStruct(void* my_object) {
 	targa* aux_targa = (targa*)my_object;
-	char* created_string = malloc(sizeof(char) * (strlen(TARGA_STRING_FORMAT) *2));
+	char* created_string = malloc(sizeof(char) * (strlen(TARGA_STRING_FORMAT) + 1));
 	if (!created_string) {
 		printf("Memory Error: cannot create new \"targa\".\n");
 	}
@@ -763,7 +769,48 @@ void* cloneMyStruct(void* obj) {
 	return new;
 }
 
-//MAIN
+void printMyStruct(void* obj) {
+	char* str = stringifyMyStruct(obj);
+	printf("%s\n", str);
+	free(str);
+}
+
+void* mediateTwoTarghe(void* obj1, void* obj2) {
+	targa* result = malloc(sizeof(targa));
+	if (!result) {
+		printf("Memory Error: cannot create new \"targa\".\n");
+	}
+	targa* t1 = (targa*) obj1;
+	targa* t2 = (targa*) obj2;
+	result->first_letters[0] = (t1->first_letters[0] + t2->first_letters[0]) / 2;
+	result->first_letters[1] = (t1->first_letters[1] + t2->first_letters[1]) / 2;
+	result->three_numbers = (t1->three_numbers + t2->three_numbers) / 2;
+	result->last_letters[0] = (t1->last_letters[0] + t2->last_letters[0]) / 2;
+	result->last_letters[1] = (t1->last_letters[1] + t2->last_letters[1]) / 2;
+	
+	return result;
+}
+
+typedef struct {
+	int value;
+} number;
+
+void* mapToInteger(void* obj) {
+	number* num = malloc(sizeof(number));
+	targa* trg = (targa*)obj;
+	num->value = trg->three_numbers;
+	free(trg);
+	return num;
+}
+
+char* stringifyMyNumber(void* obj) {
+	char* str = malloc(sizeof(char) * 6);
+	number* num = (number*)obj;
+	sprintf(str, "%5d", num->value);
+	return str;
+}
+
+/////////////////////////// MAIN /////////////////////////////
 int main(void) {
 	arraylist* arr = al_initList();
 	char* str1;
@@ -793,6 +840,10 @@ int main(void) {
 		
 	return 0;
 }
+
+#endif
+*/
+
 //////////////////////*/
 
 /* Testing Vario
