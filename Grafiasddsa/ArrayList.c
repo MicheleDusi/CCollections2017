@@ -585,12 +585,12 @@ void al_swapTwoElements(arraylist* l, int pos1, int pos2) {
 		UNVALID_POSITION_ERROR(pos1);
 	} else if (!al_checkPositionValidity(l, pos2)) {
 		UNVALID_POSITION_ERROR(pos2);
-	} else if (pos1 >= pos2) {
-		UNVALID_POSITION_ERROR(pos2);
 	} else {
-		void* aux = l->array[pos1];
-		l->array[pos1] = l->array[pos2];
-		l->array[pos2] = aux;
+		if (pos1 != pos2) {
+			void* aux = l->array[pos1];
+			l->array[pos1] = l->array[pos2];
+			l->array[pos2] = aux;
+		}
 	}
 }
 
