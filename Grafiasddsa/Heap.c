@@ -6,8 +6,12 @@
 
 #include "Heap.h"
 
-#define ARRAY_TO_HEAP(x) (x + 1)
-#define HEAP_TO_ARRAY(x) (x - 1)
+#ifndef POSITION_OPERATIONS
+#	define POSITION_OPERATIONS
+#	define ARRAY_TO_HEAP(x) (x + 1)
+#	define HEAP_TO_ARRAY(x) (x - 1)
+#	define EXISTS_POSITION_IN_HEAP(heap, pos) (pos <= ( heap ->al->size))
+#endif
 
 #ifndef MEMORY_ERROR
 #	define MEMORY_ERROR printf("Error: Cannot allocate memory.\n"); exit(1)
@@ -108,7 +112,16 @@ void bh_insertElement(binaryheap* h, void* new_element) {
 	}
 }
 
-void bh_insertAllElements(binaryheap* h, arraylist* elements); /// TODO
+/**
+ * Data una lista di elementi (implementata con un arraylist), li inserisce
+ * tutti all'interno dell'heap, rispettando la proprietà di heap.
+ */
+void bh_insertAllElements(binaryheap* h, arraylist* elements) {
+	for (int i = 0; i < elements->size; i++) {
+		bh_insertElement(h, elements->array[i]);
+	}
+	al_deleteList(elements);
+}
 
 // Deleting Elements
 
@@ -116,7 +129,7 @@ void bh_insertAllElements(binaryheap* h, arraylist* elements); /// TODO
  * Cancella la radice dell'heap e risistema i nodi restanti.
  */
 void bh_deleteRootElement(binaryheap* h) {
-	bh_deleteElementAtPosition(h, 0);
+	bh_deleteElementAtPosition(h, 1);
 }
 
 /**
@@ -128,43 +141,48 @@ void bh_deleteElement(binaryheap* h, void* element_to_delete) {
 }
 
 /**
+ * Porta l'elemento nella posizione desiderata alla fine dell'arraylist.
+ * Questo permette di eliminarlo più facilmente.
+ */
+static void bh_takeElementToEnd(binaryheap* h, int pos) {
+	// Controllo che non sia alla fine (aka: che abbia figli)
+	if (pos * 2 > (h->al->size)) {
+		// Non ho figli
+		al_swapTwoElements(h->al, HEAP_TO_ARRAY(pos), HEAP_TO_ARRAY(h->al->size));	// L'elemento da eliminare va scambiato con l'elemento in fondo
+		while (h->comparefunction(
+				h->al->array[HEAP_TO_ARRAY(pos)],
+				h->al->array[HEAP_TO_ARRAY(pos / 2)]) > 0) {
+			al_swapTwoElements(h->al, HEAP_TO_ARRAY(pos), HEAP_TO_ARRAY(pos / 2));
+			pos /= 2;
+		}
+		
+	} else if (pos * 2 == h->al->size) {
+		// Ho un figlio solo
+		// E' il caso più semplice, perchè non devo aggiornare ulteriormente i collegamenti.
+		al_swapTwoElements(h->al, HEAP_TO_ARRAY(pos), HEAP_TO_ARRAY(pos * 2));
+		
+	} else {
+		// Controllo i figli
+		if (h->comparefunction(
+				h->al->array[HEAP_TO_ARRAY(pos * 2)],				// Figlio SX (1)
+				h->al->array[HEAP_TO_ARRAY(pos * 2 + 1)]) > 0) {	// Figlio DX (2)
+			// Il primo figlio è maggiore
+			al_swapTwoElements(h->al, HEAP_TO_ARRAY(pos), HEAP_TO_ARRAY(pos * 2));
+			bh_takeElementToEnd(h, pos * 2);
+		} else {
+			// Il secondo figlio è maggiore
+			al_swapTwoElements(h->al, HEAP_TO_ARRAY(pos), HEAP_TO_ARRAY(pos * 2 + 1));
+			bh_takeElementToEnd(h, pos * 2 + 1);
+		}
+	}
+}
+
+/**
  * Data in ingresso la posizione <i>relativa all'heap</i> dell'elemento da eliminare, lo elimina dalla struttura.
  * L'elemento non viene eliminato dalla memoria ed è ancora raggiungibile se esistono puntatori ad esso.
  */
 void bh_deleteElementAtPosition(binaryheap* h, int pos) {
-	while (HEAP_TO_ARRAY(pos) < h->al->size) {
-		// Controllo che non sia alla fine (aka: che abbia figli)
-		if (pos * 2 + 1 > h->al->size) {
-			// Non ho figli
-			al_swapTwoElements(h->al, HEAP_TO_ARRAY(pos), HEAP_TO_ARRAY(h->al->size));	// L'elemento da eliminare va scambiato con l'elemento in fondo
-			while (h->comparefunction(
-					h->al->array[HEAP_TO_ARRAY(pos)],
-					h->al->array[HEAP_TO_ARRAY(pos / 2)]) > 0) {
-				al_swapTwoElements(h->al, HEAP_TO_ARRAY(pos), HEAP_TO_ARRAY(pos * 2));
-			}
-			break;
-			
-		} else if (pos * 2 + 1 == h->al->size) {
-			// Ho un figlio solo
-			// E' il caso più semplice, perchè non devo aggiornare ulteriormente i collegamenti.
-			al_swapTwoElements(h->al, HEAP_TO_ARRAY(pos), HEAP_TO_ARRAY(pos * 2));
-			break;
-			
-		} else {
-			// Controllo i figli
-			if (h->comparefunction(
-					h->al->array[HEAP_TO_ARRAY(pos * 2)],				// Figlio SX (1)
-					h->al->array[HEAP_TO_ARRAY(pos * 2 + 1)]) > 0) {	// Figlio DX (2)
-				// Il primo figlio è maggiore
-				al_swapTwoElements(h->al, HEAP_TO_ARRAY(pos), HEAP_TO_ARRAY(pos * 2));
-				pos = pos * 2;
-			} else {
-				// Il secondo figlio è maggiore
-				al_swapTwoElements(h->al, HEAP_TO_ARRAY(pos), HEAP_TO_ARRAY(pos * 2 + 1));
-				pos = pos * 2 + 1;
-			}
-		}
-	}
+	bh_takeElementToEnd(h, pos);
 	al_deleteLastElement(h->al);
 }
 
@@ -184,22 +202,46 @@ void bh_deleteElementsByConditions(binaryheap* h, bool (*condition)(void*)) {
 
 // Purging Elements
 
-void bh_purgeRootElement(binaryheap* h); /// TODO
+/**
+ * Elimina dall'heap e dalla memoria del programma l'elemento di valore massimo,
+ * ossia quello in prima posizione.
+ */
+void bh_purgeRootElement(binaryheap* h) {
+	bh_takeElementToEnd(h, 1);
+	al_purgeLastElement(h->al);
+}
 
-void bh_purgeElementAtPosition(binaryheap* h, int pos); /// TODO
+/**
+ * Elimina dall'heap e dalla memoria del programma l'elemento alla posizione
+ * indicata come parametro. Questo non sarà più accessibile successivamente alla chiamata di questa funzione.
+ */
+void bh_purgeElementAtPosition(binaryheap* h, int pos) {
+	bh_takeElementToEnd(h, pos);
+	al_purgeLastElement(h->al);
+}
 
 void bh_purgeElementsByCondition(binaryheap* h, bool (*condition)(void*)); /// TODO
 
 // Getting Elements
 
-void* bh_getRootElement(binaryheap* h); /// TODO
+/**
+ * Restituisce il valore del primo elemento dell'heap, in questo caso dell'elemento
+ * che secondo la funzione comparatrice ha valore maggiore di tutti gli altri.
+ */
+void* bh_getRootElement(binaryheap* h) {
+	return al_getFirstElement(h->al);
+}
 
 /**
  * Restituisce l'elemento dell'heap alla posizione desiderata.
  * <i>NOTA:</i> Gli indici dell'heap iniziano la numerazione dal valore 1.
  */
 void* bh_getElementAtPosition(binaryheap* h, int pos) {
-	return h->al->array[HEAP_TO_ARRAY(pos)];
+	if (EXISTS_POSITION_IN_HEAP(h, pos)) {
+		return h->al->array[HEAP_TO_ARRAY(pos)];
+	} else {
+		return NULL;
+	}
 }
 
 arraylist* bh_getElementsByCondition(binaryheap* h, bool (*condition)(void*)); /// TODO
@@ -213,15 +255,21 @@ arraylist* bh_getListOfElements(binaryheap* h) {
 
 // Extracting Elements
 
-void* bh_extractRootElement(binaryheap* h); /// TODO
+/**
+ * Estrae l'elemento radice dell'heap, arrangiando l'heap in modo che mantenga la proprietà di heap.
+ */
+void* bh_extractRootElement(binaryheap* h) {
+	bh_extractElementAtPosition(h, 1);
+	return al_extractLastElement(h->al);
+}
 
 /**
  * Restituisce un elemento alla posizione desiderata, eliminandolo dall'heap.
+ * L'operazione è implementata in modo da mantenere valida la proprietà di heap.
  */
 void* bh_extractElementAtPosition(binaryheap* h, int pos) {
-	void* aux = h->al->array[HEAP_TO_ARRAY(pos)];
-	bh_deleteElementAtPosition(h, pos);
-	return aux;
+	bh_takeElementToEnd(h, pos);
+	return al_extractLastElement(h->al);
 }
 
 /**
@@ -248,14 +296,67 @@ arraylist* bh_extractElementsByCondition(binaryheap* h, bool (*condition)(void*)
  * Se assente, viene restituito il valore -1;
  */
 int bh_getPositionOfElement(binaryheap* h, void* element_to_find) {
-	return ARRAY_TO_HEAP(al_getPositionOfElement(h->al, element_to_find));
+	int pos = al_getPositionOfElement(h->al, element_to_find);
+	if (pos == -1) {
+		return pos;
+	} else {
+		return ARRAY_TO_HEAP(pos);
+	}
 }
 
-bool bh_containsElement(binaryheap* l, void* element_content); /// TODO
+/**
+ * Restituisce true se un dato elemento è contenuto in un sub-heap, definito dalla posizione della sua radice.
+ */
+static bool bh_containsElementInSubheap(binaryheap* h, void* element_content, int subroot_pos) {
+	printf("Cerco in posizione %d\n", subroot_pos);
+	if (element_content == h->al->array[HEAP_TO_ARRAY(subroot_pos)]) {
+		// Se l'elemento che cerco è la sotto-radice allora l'ho trovato.
+		printf("Trovato in posizione %d\n", subroot_pos);
+		return true;
+	}
+	if (EXISTS_POSITION_IN_HEAP(h, subroot_pos * 2) && 
+		h->comparefunction(element_content, h->al->array[HEAP_TO_ARRAY(subroot_pos * 2)]) <= 0 &&
+		bh_containsElementInSubheap(h, element_content, subroot_pos * 2)) {
+			// SE il figlio 1 di subroot ha un subheap &&
+			// SE l'elemento da trovare può essere nel subheap secondo la proprietà di heap &&
+			// SE l'elemento è contenuto nel suo subheap
+			// ALLORA restituisco "true".
+			return true;
+	}
+	if (EXISTS_POSITION_IN_HEAP(h, subroot_pos * 2 + 1) &&
+		h->comparefunction(element_content, h->al->array[HEAP_TO_ARRAY(subroot_pos * 2 + 1)]) < 0 &&
+		bh_containsElementInSubheap(h, element_content, subroot_pos * 2 + 1)) {
+			// SE il figlio 2 di subroot ha un subheap &&
+			// SE l'elemento da trovare può essere nel subheap secondo la proprietà di heap &&
+			// SE l'elemento è contenuto nel suo subheap
+			// ALLORA restituisco "true".
+			return true;
+	}
+	// Se nessuna delle tre condizioni precedenti è soddisfatta, allora l'elemento NON è contenuto nel subheap.
+	printf("Ritorno falso dalla pos %d\n", subroot_pos);
+	return false;
+}
 
-bool bh_containsElementByCondition(binaryheap* l, bool (*condition)(void*)); /// TODO
+/**
+ * Restituisce true se l'elemento è contenuto all'interno dell'heap, false altrimenti.
+ * Richiede come parametro il riferimento all'elemento stesso.
+ * 
+ * <i>NOTA</i>: Il controllo di esistenza NON viene effettuato mediante al funzione comparatrice
+ * (cercando elementi per cui risulti il valore 0), pertanto è necessario fornire esattamente il 
+ * riferimento all'oggetto.
+ * 
+ * <i>NOTA</i>: La ricerca viene effettuata in maniera binaria ottimizzata, cercando solamente nei 
+ * sotto-alberi necessari. Pertanto la performance potrebbe essere leggermente rallentata per dimensioni
+ * piccole dell'heap (a causa dei frequenti controlli), ma permette un'esecuzione nettamente più veloce
+ * per dimensioni maggiori.
+ */
+bool bh_containsElement(binaryheap* h, void* element_content) {
+	return bh_containsElementInSubheap(h, element_content, 1);
+}
 
-int bh_countElementsByCondition(binaryheap* l, bool (*condition)(void*)); /// TODO
+bool bh_containsElementByCondition(binaryheap* h, bool (*condition)(void*)); /// TODO
+
+int bh_countElementsByCondition(binaryheap* h, bool (*condition)(void*)); /// TODO
 
 // Cloning Heap
 
@@ -263,9 +364,9 @@ binaryheap* bh_cloneHeap(binaryheap* h, void* (*clone)(void*)); /// TODO
 
 // Generic Operations On Elements
 
-void bh_iterateOnElements(binaryheap* l, void (*procedure)(void*)); /// TODO
+void bh_iterateOnElements(binaryheap* h, void (*procedure)(void*)); /// TODO
 
-void* bh_cumulateElements(binaryheap* l, void* (*binaryOperation)(void*, void*)); /// TODO
+void* bh_cumulateElements(binaryheap* h, void* (*binaryOperation)(void*, void*)); /// TODO
 
 /**
  * Restituisce l'elemento massimo dell'Heap, che per stessa definizione di max-heap si trova in testa.
@@ -500,7 +601,7 @@ int main(void) {
 	char* str1;
 	//srand(time(NULL));
 	
-	int dim = 10;
+	int dim = 20;
 	
 	for (int i = 0; i < dim; i++) {
 		bh_insertElement(hh, initRandomTarga());
@@ -509,7 +610,23 @@ int main(void) {
 	//Stampo la LISTA
 	str1 = bh_heapToString(hh, stringifyMyStruct);
 	printf("%s", str1);
-	free(str1);	
+	free(str1);
+	
+	arraylist* elements = al_initListWithCapacity(dim);
+	for (int j = 0; j < dim; j++) {
+		al_insertLastElement(elements, initRandomTarga());
+	}
+	str1 = al_listToString(elements, stringifyMyStruct);
+	printf("Inserisco tutti gli elementi di questa lista: %s\n", str1);
+	free(str1);
+	
+	bh_insertAllElements(hh, elements);
+	
+	//Stampo la LISTA
+	str1 = bh_heapToString(hh, stringifyMyStruct);
+	printf("%s", str1);
+	free(str1);
+	
 	
 	// Cleaning
 	bh_purgeHeap(hh);
@@ -535,5 +652,24 @@ int main(void) {
 		free(str1);
 	}
 
+// Ricerca di un elemento
+
+	for (int j = 1; j <= dim; j++) {
+		printf("\n\n STO ANALIZZANDO L'ELEMENTO %d!!!!!!!\n", j);
+		void* elem = bh_getElementAtPosition(hh, j);
+		if (bh_containsElement(hh, elem)) {
+			printf("TROVATO!\n\n");
+		}
+	}
+	void* external = initRandomTarga();
+	char* str2 = stringifyMyStruct(external);
+	printf("Elemento esterno: %s\n", str2);
+	free(str2);
+	if (bh_containsElement(hh, external)) {
+		printf("TROVATO!\n\n");
+	} else {
+		printf("NON TROVATO!\n\n");
+	}
+	free(external);
 
  */
